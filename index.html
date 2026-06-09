@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Distribución Kroger — Floral Ops</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0f2a4a;--blue:#1a5fa8;--border:#c8ddf0;--text:#0f1c2e;
+  --muted:#4a6a8a;--white:#fff;--pale:#f2f7fd;--ok:#1a6b3a;--okl:#e2f5eb;
+  --danger:#991f1f;--dangerl:#fceaea;--light:#deeaf7;
+}
+body{font-family:system-ui,-apple-system,sans-serif;background:#eef2f7;color:var(--text);font-size:13px;min-height:100vh}
+
+/* LOGIN */
+#login-screen{min-height:100vh;background:linear-gradient(135deg,#071929 0%,#0f2a4a 50%,#1a3a5c 100%);display:flex;align-items:center;justify-content:center;padding:1rem}
+.login-card{background:var(--white);border-radius:20px;padding:2.5rem 2.25rem;width:100%;max-width:380px;box-shadow:0 24px 64px rgba(0,0,0,.35)}
+.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:2rem}
+.brand-icon{width:48px;height:48px;background:var(--navy);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.brand-name{font-size:14px;font-weight:800;color:var(--navy)}
+.brand-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.login-title{font-size:18px;font-weight:700;color:var(--navy);margin-bottom:1.5rem}
+.lfield{margin-bottom:1rem}
+.lfield label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem}
+.lfield input{width:100%;padding:.7rem .9rem;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;color:var(--text);background:#fafcff}
+.lfield input:focus{outline:none;border-color:var(--blue)}
+.login-btn{width:100%;padding:.8rem;background:var(--navy);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
+.login-btn:hover{background:var(--blue)}
+.login-err{display:none;background:var(--dangerl);color:var(--danger);border-radius:8px;padding:.55rem .8rem;font-size:12px;margin-top:.75rem;text-align:center;font-weight:600}
+.login-footer{text-align:center;font-size:10px;color:var(--muted);margin-top:1.25rem;border-top:1px solid var(--border);padding-top:1rem}
+
+/* APP */
+#app-screen{display:none;min-height:100vh;flex-direction:column}
+.app-navbar{background:var(--navy);padding:.65rem 1.5rem;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200;flex-wrap:wrap}
+.nav-logo{flex:1;display:flex;align-items:center;gap:10px;min-width:160px}
+.nav-flower{width:32px;height:32px;background:#1a5fa8;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.nav-brand-name{font-size:11px;font-weight:800;color:#fff;font-family:monospace;letter-spacing:.05em;line-height:1.2}
+.nav-brand-sub{font-size:9px;color:#6fa8d8;letter-spacing:.08em}
+.nav-modules{display:flex;gap:3px;flex-wrap:wrap}
+.nav-mod{font-size:11px;padding:5px 13px;border-radius:7px;background:transparent;color:#9bc4e8;border:none;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s}
+.nav-mod:hover{background:rgba(255,255,255,.1);color:#fff}
+.nav-mod.active{background:rgba(255,255,255,.18);color:#fff}
+.nav-right{display:flex;align-items:center;gap:8px}
+.nav-avatar{width:30px;height:30px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
+.nav-userinfo strong{font-size:11px;color:#fff;display:block;line-height:1.2}
+.nav-userinfo span{font-size:9px;color:#6fa8d8}
+.nav-action{font-size:10px;padding:4px 10px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:transparent;color:#9bc4e8;cursor:pointer;font-family:inherit;white-space:nowrap}
+.nav-action:hover{background:rgba(255,255,255,.1);color:#fff}
+.nav-action.admin{border-color:rgba(239,159,39,.4);color:#EF9F27}
+.nav-action.admin:hover{background:rgba(239,159,39,.1)}
+
+/* HOME */
+.mod-wrap{flex:1;padding:1.25rem;max-width:1600px;margin:0 auto;width:100%}
+.hero-banner{background:var(--navy);border-radius:16px;padding:1.75rem 2rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1.5rem;position:relative;overflow:hidden}
+.hero-flowers{position:absolute;right:0;top:0;bottom:0;width:160px;display:flex;align-items:center;justify-content:center;font-size:56px;opacity:.1;pointer-events:none;letter-spacing:-8px}
+.hero-tag{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:10px;color:rgba(255,255,255,.7);margin-bottom:10px;border:1px solid rgba(255,255,255,.1)}
+.hero-title{font-size:20px;font-weight:800;color:#fff;margin-bottom:.3rem}
+.hero-sub{font-size:12px;color:rgba(255,255,255,.65);line-height:1.5;max-width:420px}
+.hero-stats{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap}
+.hstat{background:rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;border:1px solid rgba(255,255,255,.1)}
+.hstat .hn{font-size:18px;font-weight:700;color:#fff;font-family:monospace}
+.hstat .hl{font-size:9px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.07em;margin-top:1px}
+.section-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.home-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:1.25rem}
+.hcard{background:var(--white);border:0.5px solid var(--border);border-radius:14px;padding:1.25rem 1.5rem;cursor:pointer;transition:all .2s;border-top:3px solid var(--border);position:relative}
+.hcard:hover{box-shadow:0 6px 24px rgba(15,42,74,.12);transform:translateY(-2px);border-top-color:var(--blue)}
+.hcard.ok-blue{border-top-color:var(--blue)}
+.hcard.ok-green{border-top-color:var(--ok)}
+.hcard.dim{opacity:.55;cursor:default}
+.hcard-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.75rem}
+.hcard-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.hcard-badge{font-size:9px;padding:3px 9px;border-radius:20px;font-weight:700}
+.badge-ok{background:var(--okl);color:var(--ok)}
+.badge-dim{background:#f0f0f0;color:#888}
+.hcard-title{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:.3rem}
+.hcard-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.hcard-arrow{position:absolute;right:1rem;top:50%;transform:translateY(-50%);color:#c8ddf0;font-size:20px}
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.panel{background:var(--white);border-radius:12px;padding:1rem 1.25rem;border:0.5px solid var(--border)}
+.panel-title{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:.75rem;display:flex;align-items:center;gap:6px}
+.act-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid #f0f4f8}
+.act-item:last-child{border-bottom:none}
+.act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.act-dot.red{background:#E24B4A}.act-dot.green{background:var(--ok)}.act-dot.blue{background:var(--blue)}.act-dot.amber{background:#EF9F27}
+.act-text{flex:1;font-size:11px;color:var(--text)}
+.act-text span{display:block;font-size:10px;color:var(--muted)}
+.act-time{font-size:10px;color:var(--muted);white-space:nowrap}
+.tip-item{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:0.5px solid #f0f4f8}
+.tip-item:last-child{border-bottom:none}
+.tip-num{width:18px;height:18px;border-radius:50%;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--blue);flex-shrink:0;margin-top:1px}
+.tip-text{font-size:11px;color:var(--muted);line-height:1.4}
+.tip-text strong{color:var(--navy)}
+
+/* MI CUENTA */
+.cuenta-wrap{max-width:480px;margin:1rem auto}
+.cuenta-card{background:var(--white);border:0.5px solid var(--border);border-radius:16px;padding:2rem}
+.cuenta-hdr{display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.cuenta-icon{width:38px;height:38px;border-radius:9px;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:18px}
+.cuenta-title{font-size:15px;font-weight:700;color:var(--navy)}
+.cuenta-sub{font-size:11px;color:var(--muted)}
+.mfield{margin-bottom:1rem}
+.mfield label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem}
+.mfield input,.mfield select{width:100%;padding:.65rem .9rem;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;color:var(--text)}
+.mfield input:focus,.mfield select:focus{outline:none;border-color:var(--blue)}
+.pw-bar-wrap{height:4px;border-radius:2px;background:#e8f0f8;margin-top:6px;overflow:hidden}
+.pw-bar-fill{height:100%;border-radius:2px;transition:width .3s,background .3s;width:0}
+.pw-hint{font-size:10px;color:var(--muted);margin-top:3px}
+.pw-msg{font-size:11px;text-align:center;margin-top:.5rem;min-height:16px;font-weight:600}
+.pw-msg.ok{color:var(--ok)}.pw-msg.err{color:var(--danger)}
+.btn-row{display:flex;gap:8px;margin-top:1.25rem}
+.btn-p{flex:1;padding:.7rem;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-p:hover{background:var(--blue)}
+.btn-s{padding:.7rem 1rem;background:transparent;color:var(--muted);border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+
+/* ADMIN */
+.admin-wrap{max-width:700px;margin:1rem auto}
+.admin-card{background:var(--white);border:0.5px solid var(--border);border-radius:16px;padding:1.5rem;margin-bottom:1rem}
+.admin-hdr{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.admin-icon{width:38px;height:38px;border-radius:9px;background:#fff8e1;display:flex;align-items:center;justify-content:center;font-size:18px}
+.admin-title{font-size:15px;font-weight:700;color:var(--navy)}
+.admin-sub{font-size:11px;color:var(--muted)}
+.user-table{width:100%;border-collapse:collapse;font-size:12px}
+.user-table th{text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;padding:6px 8px;border-bottom:1.5px solid var(--border)}
+.user-table td{padding:8px 8px;border-bottom:0.5px solid #f0f4f8;vertical-align:middle}
+.user-table tr:last-child td{border-bottom:none}
+.user-table tr:hover td{background:var(--pale)}
+.u-avatar{width:26px;height:26px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
+.u-name{font-weight:700;color:var(--navy)}
+.u-user{font-size:10px;color:var(--muted);font-family:monospace}
+.btn-reset{font-size:10px;padding:3px 10px;border:0.5px solid var(--border);border-radius:5px;background:var(--white);color:var(--muted);cursor:pointer;font-family:inherit}
+.btn-reset:hover{background:var(--pale);color:var(--navy)}
+.btn-danger{font-size:10px;padding:3px 10px;border:0.5px solid #f09595;border-radius:5px;background:var(--white);color:var(--danger);cursor:pointer;font-family:inherit}
+.btn-danger:hover{background:var(--dangerl)}
+.add-user-form{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)}
+.add-user-form .mfield{margin-bottom:0}
+.iframe-frame{width:100%;border:none;flex:1;min-height:calc(100vh - 44px)}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="brand-icon">🌸</div>
+      <div>
+        <div class="brand-name">DISTRIBUCIÓN KROGER</div>
+        <div class="brand-sub">Floral Operations Platform</div>
+      </div>
+    </div>
+    <div class="login-title">Iniciar sesión</div>
+    <div class="lfield"><label>Usuario</label><input type="text" id="inp-user" placeholder="tu usuario" autocomplete="username"></div>
+    <div class="lfield"><label>Contraseña</label><input type="password" id="inp-pass" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="login-btn" id="btn-login">Entrar →</button>
+    <div class="login-err" id="login-err">Usuario o contraseña incorrectos</div>
+    <div class="login-footer">Solo personal autorizado · DK Floral Ops</div>
+  </div>
+</div>
+
+<div id="app-screen">
+  <nav class="app-navbar">
+    <div class="nav-logo">
+      <div class="nav-flower">🌸</div>
+      <div>
+        <div class="nav-brand-name">DISTRIBUCIÓN KROGER</div>
+        <div class="nav-brand-sub">FLORAL OPERATIONS</div>
+      </div>
+    </div>
+    <div class="nav-modules">
+      <button class="nav-mod active" id="btn-home">🏠 Inicio</button>
+      <button class="nav-mod" id="btn-comp">📊 Comparador</button>
+      <button class="nav-mod" id="btn-seg">📅 Seguimiento ITN</button>
+    </div>
+    <div class="nav-right">
+      <div class="nav-avatar" id="nav-avatar">--</div>
+      <div class="nav-userinfo">
+        <strong id="nav-username"></strong>
+        <span id="nav-userid"></span>
+      </div>
+      <button class="nav-action admin" id="btn-admin" style="display:none">👑 Admin</button>
+      <button class="nav-action" id="btn-cuenta">⚙️ Mi cuenta</button>
+      <button class="nav-action" id="btn-logout">Salir</button>
+    </div>
+  </nav>
+
+  <!-- HOME -->
+  <div id="mod-home" class="mod-wrap">
+    <div class="hero-banner">
+      <div class="hero-flowers">🌹🌸🌺🌷</div>
+      <div style="flex:1;position:relative;z-index:1">
+        <div class="hero-tag">🌸 Floral Distribution · Kroger Partner</div>
+        <div class="hero-title">Bienvenido, <span id="banner-name"></span></div>
+        <div class="hero-sub">Centro de operaciones para pedidos, comparación y seguimiento de órdenes Kroger.</div>
+        <div class="hero-stats">
+          <div class="hstat"><div class="hn">2</div><div class="hl">Módulos activos</div></div>
+          <div class="hstat"><div class="hn" id="stat-users">7</div><div class="hl">Usuarios</div></div>
+          <div class="hstat"><div class="hn" id="stat-date">--</div><div class="hl">Fecha de hoy</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Módulos de operaciones</div>
+    <div class="home-cards">
+      <div class="hcard ok-blue" id="card-comp">
+        <div class="hcard-head">
+          <div class="hcard-icon" style="background:#deeaf7">📊</div>
+          <span class="hcard-badge badge-ok">✅ Activo</span>
+        </div>
+        <div class="hcard-title">Comparador Kroger</div>
+        <div class="hcard-desc">Cruza ITN vs WO vs Facturación. Detecta diferencias por SKU, carrier y fecha de envío.</div>
+        <div class="hcard-arrow">›</div>
+      </div>
+      <div class="hcard ok-green" id="card-seg">
+        <div class="hcard-head">
+          <div class="hcard-icon" style="background:#e2f5eb">📅</div>
+          <span class="hcard-badge badge-ok">✅ Activo</span>
+        </div>
+        <div class="hcard-title">Seguimiento Diario ITN</div>
+        <div class="hcard-desc">Historial diario de pedidos. Críticos, cambios, entregas y comparación con WO.</div>
+        <div class="hcard-arrow">›</div>
+      </div>
+      <div class="hcard dim">
+        <div class="hcard-head">
+          <div class="hcard-icon" style="background:#f0f0f0">📦</div>
+          <span class="hcard-badge badge-dim">🔒 Próximamente</span>
+        </div>
+        <div class="hcard-title">Módulo 3</div>
+        <div class="hcard-desc">En desarrollo para el equipo de operaciones florales.</div>
+      </div>
+    </div>
+
+    <div class="bottom-grid">
+      <div class="panel">
+        <div class="panel-title">📋 Guía rápida</div>
+        <div class="tip-item"><div class="tip-num">1</div><div class="tip-text">Nombra el ITN con fecha: <strong>03-06-2026_ITN.xlsx</strong> para detección automática del día</div></div>
+        <div class="tip-item"><div class="tip-num">2</div><div class="tip-text">Usa <strong>"Ver hoy"</strong> en Seguimiento para ver los POs con ship date de hoy primero</div></div>
+        <div class="tip-item"><div class="tip-num">3</div><div class="tip-text">Filtra por <strong>🚨 Críticos</strong> para identificar pedidos con ship date vencida sin entregar</div></div>
+        <div class="tip-item"><div class="tip-num">4</div><div class="tip-text">Carga el <strong>WO</strong> en Seguimiento para verificar qué POs tienen orden de trabajo creada</div></div>
+        <div class="tip-item"><div class="tip-num">5</div><div class="tip-text">En el Comparador carga <strong>ITN → WO → Facturación</strong> en ese orden para mejor comparación</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">ℹ️ Acerca del sistema</div>
+        <div class="act-item"><div class="act-dot blue"></div><div class="act-text">Comparador Kroger<span>Compara ITN vs WO vs Facturación por SKU y carrier</span></div></div>
+        <div class="act-item"><div class="act-dot green"></div><div class="act-text">Seguimiento ITN<span>Historial 7 días · Críticos · Cambios · WO Check</span></div></div>
+        <div class="act-item"><div class="act-dot amber"></div><div class="act-text">Contraseñas personalizables<span>Cada usuario puede cambiar su contraseña en Mi Cuenta</span></div></div>
+        <div class="act-item"><div class="act-dot red"></div><div class="act-text">Panel de Administración<span>Solo accesible para el administrador del sistema</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPARADOR -->
+  <iframe id="mod-comp" class="iframe-frame" src="kroger_comparador.html" style="display:none"></iframe>
+
+  <!-- SEGUIMIENTO -->
+  <iframe id="mod-seg" class="iframe-frame" src="itn_seguimiento.html" style="display:none"></iframe>
+
+  <!-- MI CUENTA -->
+  <div id="mod-cuenta" style="display:none"><div class="mod-wrap">
+    <div class="cuenta-wrap"><div class="cuenta-card">
+      <div class="cuenta-hdr">
+        <div class="cuenta-icon">🔒</div>
+        <div><div class="cuenta-title">Mi cuenta</div><div class="cuenta-sub" id="cuenta-label"></div></div>
+        <button id="btn-volver" style="margin-left:auto;background:none;border:0.5px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--muted);font-size:11px">← Volver</button>
+      </div>
+      <div class="mfield"><label>Contraseña actual</label><input type="password" id="pw-cur" placeholder="••••••••"></div>
+      <div class="mfield">
+        <label>Nueva contraseña</label>
+        <input type="password" id="pw-new" placeholder="mínimo 6 caracteres">
+        <div class="pw-bar-wrap"><div class="pw-bar-fill" id="pw-bar"></div></div>
+        <div class="pw-hint" id="pw-hint">Escribe tu nueva contraseña</div>
+      </div>
+      <div class="mfield"><label>Confirmar</label><input type="password" id="pw-conf" placeholder="repite la contraseña"></div>
+      <div class="pw-msg" id="pw-msg"></div>
+      <div class="btn-row">
+        <button class="btn-s" id="btn-cancel-pw">Cancelar</button>
+        <button class="btn-p" id="btn-save-pw">Guardar contraseña</button>
+      </div>
+    </div></div>
+  </div></div>
+
+  <!-- ADMIN -->
+  <div id="mod-admin" style="display:none"><div class="mod-wrap">
+    <div class="admin-wrap">
+      <div class="admin-card">
+        <div class="admin-hdr">
+          <div class="admin-icon">👑</div>
+          <div><div class="admin-title">Panel de Administración</div><div class="admin-sub">Gestión de usuarios · Solo visible para el administrador</div></div>
+          <button id="btn-admin-volver" style="margin-left:auto;background:none;border:0.5px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--muted);font-size:11px">← Volver</button>
+        </div>
+        <table class="user-table" id="admin-table">
+          <thead><tr>
+            <th></th><th>Nombre</th><th>Usuario</th><th>Contraseña</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="admin-tbody"></tbody>
+        </table>
+        <div class="pw-msg" id="admin-msg" style="margin-top:.75rem"></div>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-hdr">
+          <div class="admin-icon">➕</div>
+          <div><div class="admin-title">Agregar usuario</div><div class="admin-sub">El nuevo usuario entrará con la contraseña por defecto DK2025*</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end">
+          <div class="mfield"><label>Nombre completo</label><input type="text" id="new-name" placeholder="Juan Pérez"></div>
+          <div class="mfield"><label>Usuario</label><input type="text" id="new-user" placeholder="jperez"></div>
+          <div class="mfield"><label>Contraseña inicial</label><input type="text" id="new-pass" value="DK2025*"></div>
+          <button class="btn-p" id="btn-add-user" style="height:38px;white-space:nowrap;flex:none">➕ Agregar</button>
+        </div>
+        <div class="pw-msg" id="add-msg"></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<script>
+var DEFAULT_USERS=[
+  {u:'saguero',p:'DK2025*',n:'Santiago Aguero',admin:true},
+  {u:'aaldana',p:'DK2025*',n:'Amparo Aldana',admin:false},
+  {u:'abravo',p:'DK2025*',n:'Antonio Bravo',admin:false},
+  {u:'jcolmenares',p:'DK2025*',n:'Juan Colmenares',admin:false},
+  {u:'pcelis',p:'DK2025*',n:'Paola Celis',admin:false},
+  {u:'jcelis',p:'DK2025*',n:'Jenny Celis',admin:false},
+  {u:'rrivera',p:'DK2025*',n:'Ricardo Rivera',admin:false},
+];
+
+var USERS=[];
+var CUR=null;
+
+function loadUsers(){
+  try{
+    var s=localStorage.getItem('dk_users');
+    if(s) USERS=JSON.parse(s);
+    else USERS=JSON.parse(JSON.stringify(DEFAULT_USERS));
+  }catch(e){ USERS=JSON.parse(JSON.stringify(DEFAULT_USERS)); }
+}
+function saveUsers(){ try{localStorage.setItem('dk_users',JSON.stringify(USERS));}catch(e){} }
+function getPass(u){ var usr=USERS.find(function(x){return x.u===u;}); return usr?usr.p:null; }
+function setPass(u,p){ var usr=USERS.find(function(x){return x.u===u;}); if(usr){usr.p=p;saveUsers();} }
+
+loadUsers();
+
+// Date on hero
+(function(){
+  var d=new Date();
+  var days=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+  var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var el=document.getElementById('stat-date');
+  if(el) el.textContent=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()];
+  var su=document.getElementById('stat-users');
+  if(su) su.textContent=USERS.length;
+})();
+
+function showMod(m){
+  ['mod-home','mod-comp','mod-seg','mod-cuenta','mod-admin'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.style.display='none';
+  });
+  ['btn-home','btn-comp','btn-seg'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.classList.remove('active');
+  });
+  var target=document.getElementById('mod-'+m);
+  if(target)target.style.display='block';
+  var btn=document.getElementById('btn-'+m);
+  if(btn)btn.classList.add('active');
+}
+
+function doLogin(){
+  var u=document.getElementById('inp-user').value.trim().toLowerCase();
+  var p=document.getElementById('inp-pass').value;
+  var found=USERS.find(function(x){return x.u===u;});
+  if(!found||p!==found.p){
+    document.getElementById('login-err').style.display='block';
+    document.getElementById('inp-pass').value='';
+    return;
+  }
+  CUR=found;
+  document.getElementById('login-err').style.display='none';
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app-screen').style.display='flex';
+  var init=found.n.split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
+  document.getElementById('nav-avatar').textContent=init;
+  document.getElementById('nav-username').textContent=found.n;
+  document.getElementById('nav-userid').textContent=found.u;
+  document.getElementById('banner-name').textContent=found.n.split(' ')[0];
+  document.getElementById('stat-users').textContent=USERS.length;
+  if(found.admin) document.getElementById('btn-admin').style.display='';
+  else document.getElementById('btn-admin').style.display='none';
+  showMod('home');
+}
+
+function doLogout(){
+  CUR=null;
+  document.getElementById('app-screen').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('inp-user').value='';
+  document.getElementById('inp-pass').value='';
+  document.getElementById('btn-admin').style.display='none';
+}
+
+function openCuenta(){
+  if(!CUR)return;
+  document.getElementById('cuenta-label').textContent=CUR.n+' · '+CUR.u;
+  ['pw-cur','pw-new','pw-conf'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('pw-msg').textContent='';
+  document.getElementById('pw-bar').style.width='0';
+  document.getElementById('pw-hint').textContent='Escribe tu nueva contraseña';
+  showMod('cuenta');
+  document.querySelectorAll('.nav-mod').forEach(function(b){b.classList.remove('active');});
+}
+function closeCuenta(){showMod('home');}
+
+function checkStrength(){
+  var pw=document.getElementById('pw-new').value;
+  var bar=document.getElementById('pw-bar');
+  var hint=document.getElementById('pw-hint');
+  if(!pw){bar.style.width='0';hint.textContent='Escribe tu nueva contraseña';return;}
+  var s=0;
+  if(pw.length>=6)s++;if(pw.length>=10)s++;
+  if(/[A-Z]/.test(pw))s++;if(/[0-9]/.test(pw))s++;if(/[^A-Za-z0-9]/.test(pw))s++;
+  var c=['#e24b4a','#ef9f27','#ef9f27','#1a6b3a','#1a6b3a'];
+  var l=['Muy débil','Débil','Media','Fuerte','Muy fuerte'];
+  bar.style.width=(s*20)+'%';bar.style.background=c[s-1]||'#e24b4a';
+  hint.textContent='Seguridad: '+(l[s-1]||'Muy débil');
+}
+
+function savePw(){
+  if(!CUR)return;
+  var cur=document.getElementById('pw-cur').value;
+  var nw=document.getElementById('pw-new').value;
+  var conf=document.getElementById('pw-conf').value;
+  var msg=document.getElementById('pw-msg');
+  if(cur!==CUR.p){msg.textContent='Contraseña actual incorrecta';msg.className='pw-msg err';return;}
+  if(nw.length<6){msg.textContent='Mínimo 6 caracteres';msg.className='pw-msg err';return;}
+  if(nw!==conf){msg.textContent='Las contraseñas no coinciden';msg.className='pw-msg err';return;}
+  setPass(CUR.u,nw);
+  CUR.p=nw;
+  msg.textContent='✅ Contraseña actualizada';msg.className='pw-msg ok';
+  setTimeout(closeCuenta,1800);
+}
+
+// ADMIN
+function openAdmin(){
+  if(!CUR||!CUR.admin)return;
+  renderAdminTable();
+  showMod('admin');
+  document.querySelectorAll('.nav-mod').forEach(function(b){b.classList.remove('active');});
+}
+function closeAdmin(){showMod('home');}
+
+function renderAdminTable(){
+  var tbody=document.getElementById('admin-tbody');
+  var rows='';
+  USERS.forEach(function(u,i){
+    var init=u.n.split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
+    rows+='<tr>'
+      +'<td><div class="u-avatar">'+init+'</div></td>'
+      +'<td><div class="u-name">'+u.n+'</div>'+(u.admin?'<div style="font-size:9px;color:#EF9F27;font-weight:700">👑 Admin</div>':'')+'</td>'
+      +'<td><div class="u-user">'+u.u+'</div></td>'
+      +'<td><div class="u-user">'+u.p+'</div></td>'
+      +'<td style="display:flex;gap:6px;flex-wrap:wrap">'
+      +'<button class="btn-reset" onclick="resetPass('+i+')">🔄 Resetear</button>'
+      +(!u.admin?'<button class="btn-danger" onclick="removeUser('+i+')">🗑 Eliminar</button>':'')
+      +'</td>'
+      +'</tr>';
+  });
+  tbody.innerHTML=rows;
+}
+
+function resetPass(i){
+  if(!confirm('¿Resetear contraseña de '+USERS[i].n+' a DK2025*?')) return;
+  USERS[i].p='DK2025*';
+  saveUsers();
+  renderAdminTable();
+  var msg=document.getElementById('admin-msg');
+  msg.textContent='✅ Contraseña de '+USERS[i].n+' reseteada a DK2025*';
+  msg.className='pw-msg ok';
+  setTimeout(function(){msg.textContent='';},3000);
+}
+
+function removeUser(i){
+  if(!confirm('¿Eliminar usuario '+USERS[i].n+'?')) return;
+  USERS.splice(i,1);
+  saveUsers();
+  renderAdminTable();
+  document.getElementById('stat-users').textContent=USERS.length;
+}
+
+function addUser(){
+  var name=document.getElementById('new-name').value.trim();
+  var user=document.getElementById('new-user').value.trim().toLowerCase();
+  var pass=document.getElementById('new-pass').value.trim();
+  var msg=document.getElementById('add-msg');
+  if(!name||!user){msg.textContent='Nombre y usuario son obligatorios';msg.className='pw-msg err';return;}
+  if(USERS.find(function(u){return u.u===user;})){msg.textContent='El usuario ya existe';msg.className='pw-msg err';return;}
+  if(!pass) pass='DK2025*';
+  USERS.push({u:user,p:pass,n:name,admin:false});
+  saveUsers();
+  document.getElementById('new-name').value='';
+  document.getElementById('new-user').value='';
+  document.getElementById('new-pass').value='DK2025*';
+  renderAdminTable();
+  document.getElementById('stat-users').textContent=USERS.length;
+  msg.textContent='✅ Usuario '+name+' agregado correctamente';msg.className='pw-msg ok';
+  setTimeout(function(){msg.textContent='';},3000);
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  document.getElementById('btn-login').addEventListener('click',doLogin);
+  document.getElementById('inp-pass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+  document.getElementById('inp-user').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+  document.getElementById('btn-home').addEventListener('click',function(){showMod('home');});
+  document.getElementById('btn-comp').addEventListener('click',function(){showMod('comp');});
+  document.getElementById('btn-seg').addEventListener('click',function(){showMod('seg');});
+  document.getElementById('btn-cuenta').addEventListener('click',openCuenta);
+  document.getElementById('btn-admin').addEventListener('click',openAdmin);
+  document.getElementById('btn-logout').addEventListener('click',doLogout);
+  document.getElementById('btn-volver').addEventListener('click',closeCuenta);
+  document.getElementById('btn-cancel-pw').addEventListener('click',closeCuenta);
+  document.getElementById('btn-save-pw').addEventListener('click',savePw);
+  document.getElementById('btn-admin-volver').addEventListener('click',closeAdmin);
+  document.getElementById('btn-add-user').addEventListener('click',addUser);
+  document.getElementById('pw-new').addEventListener('input',checkStrength);
+  document.getElementById('card-comp').addEventListener('click',function(){showMod('comp');});
+  document.getElementById('card-seg').addEventListener('click',function(){showMod('seg');});
+});
+</script>
+</body>
+</html>
