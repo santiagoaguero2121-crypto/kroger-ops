@@ -817,7 +817,7 @@ function buildDetail(r,cols){
   keys.forEach(function(k){
     var p=r.prods[k];
     // Get qty per day
-    var dayQtys=HIST_DATA.map(function(d){ return d.pos[r.po]&&d.pos[r.po].prods&&d.pos[r.po].prods[k]?Math.round(d.pos[r.po].prods[k].qty):null; });
+    var dayQtys=HIST_DATA.map(function(d){ var dp=d.pos[r.po]; return (dp&&dp.prods&&dp.prods.hasOwnProperty(k))?Math.round(dp.prods[k].qty):null; });
     // lastQ = exact value on the last loaded day (null if SKU absent that day)
     var lastQ=dayQtys.length?dayQtys[dayQtys.length-1]:null;
     // prevQ = last non-null value before the final day
