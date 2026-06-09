@@ -818,12 +818,16 @@ function buildDetail(r,cols){
     var p=r.prods[k];
     // Get qty per day
     var dayQtys=HIST_DATA.map(function(d){ return d.pos[r.po]&&d.pos[r.po].prods&&d.pos[r.po].prods[k]?Math.round(d.pos[r.po].prods[k].qty):null; });
-    var lastQ=null,prevQ=null;
-    for(var i=dayQtys.length-1;i>=0;i--){ if(dayQtys[i]!==null){lastQ=dayQtys[i];break;} }
+    // lastQ = exact value on the last loaded day (null if SKU absent that day)
+    var lastQ=dayQtys.length?dayQtys[dayQtys.length-1]:null;
+    // prevQ = last non-null value before the final day
+    var prevQ=null;
     for(var i=dayQtys.length-2;i>=0;i--){ if(dayQtys[i]!==null){prevQ=dayQtys[i];break;} }
     var diff=(lastQ!==null&&prevQ!==null)?lastQ-prevQ:null;
     var isSkuNew=lastQ!==null&&prevQ===null;
+    // Gone = SKU was present before but absent (null) on the last day
     var isSkuGone=lastQ===null&&prevQ!==null;
+    // Zero = SKU explicitly set to 0 on last day
     var isSkuZero=lastQ===0&&prevQ!==null&&prevQ>0;
     var rowCls=isSkuZero?'sku-zero':(isSkuNew?'sku-new':(isSkuGone?'sku-gone':(diff&&Math.abs(diff)>0?'sku-warn':'')));
     var dBadge=isSkuZero?'<span style="font-size:9px;background:#F7C1C1;color:#791F1F;padding:2px 7px;border-radius:3px;font-weight:700;border:1px solid #F09595">CANCEL</span>'
@@ -832,7 +836,17 @@ function buildDetail(r,cols){
               :diff?'<span style="font-size:9px;background:#FAEEDA;color:#633806;padding:0 6px;border-radius:3px;font-weight:700;border:1px solid #EF9F27">'+(diff>0?'+':'')+diff+'</span>'
               :'<span style="color:var(--muted)">\u2014</span>';
     tbl+='<tr class="'+rowCls+'"><td class="tl" style="font-family:monospace;font-size:10px;color:var(--muted)">'+k+'</td><td class="tl">'+p.desc+'</td>';
-    dayQtys.forEach(function(q){ tbl+=q===null?'<td style="color:#c5d5e5">—</td>':(q===0?'<td style="font-family:monospace;font-weight:700;color:#E24B4A">0</td>':'<td style="font-family:monospace;font-weight:700">'+q+'</td>'); });
+    dayQtys.forEach(function(q,qi){
+      var isLastDay=qi===dayQtys.length-1;
+      if(q===null){
+        // Last day null on a gone SKU = show red dash
+        tbl+=(isLastDay&&isSkuGone)?'<td style="font-family:monospace;font-weight:700;color:#E24B4A">—</td>':'<td style="color:#c5d5e5">—</td>';
+      } else if(q===0){
+        tbl+='<td style="font-family:monospace;font-weight:700;color:#E24B4A">0</td>';
+      } else {
+        tbl+='<td style="font-family:monospace;font-weight:700">'+q+'</td>';
+      }
+    });
     tbl+='<td>'+dBadge+'</td></tr>';
   });
   tbl+='</tbody></table>';
