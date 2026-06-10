@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Distribución Kroger — Floral Ops</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -14,83 +15,108 @@
 body{font-family:system-ui,-apple-system,sans-serif;background:#eef2f7;color:var(--text);font-size:13px;min-height:100vh}
 
 /* LOGIN */
-#login-screen{min-height:100vh;background:linear-gradient(135deg,#071929 0%,#0f2a4a 50%,#1a3a5c 100%);display:flex;align-items:center;justify-content:center;padding:1rem}
-.login-card{background:var(--white);border-radius:20px;padding:2.5rem 2.25rem;width:100%;max-width:380px;box-shadow:0 24px 64px rgba(0,0,0,.35)}
-.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:2rem}
-.brand-icon{width:48px;height:48px;background:var(--navy);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
-.brand-name{font-size:14px;font-weight:800;color:var(--navy)}
-.brand-sub{font-size:10px;color:var(--muted);margin-top:1px}
-.login-title{font-size:18px;font-weight:700;color:var(--navy);margin-bottom:1.5rem}
+#login-screen{min-height:100vh;background:#060f1a;display:flex;align-items:center;justify-content:center;padding:1rem;position:relative;overflow:hidden}
+.login-bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(26,95,168,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(26,95,168,.06) 1px,transparent 1px);background-size:40px 40px;pointer-events:none}
+.login-bg-glow{position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(26,95,168,.1) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.login-card{background:rgba(255,255,255,.03);border:0.5px solid rgba(255,255,255,.1);border-radius:20px;padding:2.5rem 2.25rem;width:100%;max-width:360px;position:relative;z-index:1}
+.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:1.5rem}
+.brand-icon{width:46px;height:46px;background:#1a5fa8;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid rgba(255,255,255,.15);flex-shrink:0}
+.brand-name{font-size:13px;font-weight:800;color:#fff;letter-spacing:.04em}
+.brand-sub{font-size:9px;color:rgba(255,255,255,.4);margin-top:1px;text-transform:uppercase;letter-spacing:.08em}
+.login-divider{height:0.5px;background:rgba(255,255,255,.08);margin-bottom:1.5rem}
+.login-secure{display:inline-flex;align-items:center;gap:4px;background:rgba(26,153,117,.1);border:0.5px solid rgba(26,153,117,.2);border-radius:20px;padding:3px 9px;font-size:9px;color:rgba(26,200,150,.7);margin-bottom:1.25rem}
+.login-title{font-size:17px;font-weight:700;color:#fff;margin-bottom:.25rem}
+.login-subtitle{font-size:11px;color:rgba(255,255,255,.4);margin-bottom:1.5rem;line-height:1.5}
 .lfield{margin-bottom:1rem}
-.lfield label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem}
-.lfield input{width:100%;padding:.7rem .9rem;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;color:var(--text);background:#fafcff}
-.lfield input:focus{outline:none;border-color:var(--blue)}
-.login-btn{width:100%;padding:.8rem;background:var(--navy);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
-.login-btn:hover{background:var(--blue)}
-.login-err{display:none;background:var(--dangerl);color:var(--danger);border-radius:8px;padding:.55rem .8rem;font-size:12px;margin-top:.75rem;text-align:center;font-weight:600}
-.login-footer{text-align:center;font-size:10px;color:var(--muted);margin-top:1.25rem;border-top:1px solid var(--border);padding-top:1rem}
+.lfield label{display:block;font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.09em;margin-bottom:.45rem}
+.lfield-wrap{position:relative}
+.lfield-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;color:rgba(255,255,255,.25);pointer-events:none}
+.lfield input{width:100%;padding:.75rem .9rem .75rem 2.4rem;background:rgba(255,255,255,.05);border:0.5px solid rgba(255,255,255,.12);border-radius:10px;font-size:13px;font-family:inherit;color:#fff;outline:none;transition:border-color .2s,background .2s}
+.lfield input::placeholder{color:rgba(255,255,255,.2)}
+.lfield input:focus{border-color:rgba(26,95,168,.8);background:rgba(26,95,168,.08)}
+.login-btn{width:100%;padding:.85rem;background:#1a5fa8;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s,transform .1s;margin-top:.25rem;display:flex;align-items:center;justify-content:center;gap:8px}
+.login-btn:hover{background:#2070c0}
+.login-btn:active{transform:scale(.98)}
+.login-err{display:none;background:rgba(226,75,74,.15);border:0.5px solid rgba(226,75,74,.3);color:#F09595;border-radius:8px;padding:.55rem .9rem;font-size:11px;margin-top:.75rem;text-align:center;font-weight:600}
+.login-footer{text-align:center;margin-top:1.5rem;padding-top:1.25rem;border-top:0.5px solid rgba(255,255,255,.07)}
+.login-footer p{font-size:10px;color:rgba(255,255,255,.25);line-height:1.6}
+.login-footer strong{color:rgba(255,255,255,.4)}
 
 /* APP */
 #app-screen{display:none;min-height:100vh;flex-direction:column}
-.app-navbar{background:var(--navy);padding:.65rem 1.5rem;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200;flex-wrap:wrap}
-.nav-logo{flex:1;display:flex;align-items:center;gap:10px;min-width:160px}
-.nav-flower{width:32px;height:32px;background:#1a5fa8;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.nav-brand-name{font-size:11px;font-weight:800;color:#fff;font-family:monospace;letter-spacing:.05em;line-height:1.2}
+.app-navbar{background:var(--navy);padding:0 1.5rem;display:flex;align-items:center;gap:6px;position:sticky;top:0;z-index:200;height:48px}
+.nav-logo{display:flex;align-items:center;gap:10px;margin-right:12px}
+.nav-flower{width:32px;height:32px;background:#1a5fa8;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-brand-name{font-size:11px;font-weight:800;color:#fff;letter-spacing:.05em;line-height:1.2}
 .nav-brand-sub{font-size:9px;color:#6fa8d8;letter-spacing:.08em}
-.nav-modules{display:flex;gap:3px;flex-wrap:wrap}
-.nav-mod{font-size:11px;padding:5px 13px;border-radius:7px;background:transparent;color:#9bc4e8;border:none;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s}
+.nav-modules{display:flex;gap:3px}
+.nav-mod{font-size:11px;padding:5px 13px;border-radius:7px;background:transparent;color:#9bc4e8;border:none;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s;display:flex;align-items:center;gap:5px;height:34px}
 .nav-mod:hover{background:rgba(255,255,255,.1);color:#fff}
 .nav-mod.active{background:rgba(255,255,255,.18);color:#fff}
-.nav-right{display:flex;align-items:center;gap:8px}
-.nav-avatar{width:30px;height:30px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.nav-clock{font-size:10px;color:rgba(255,255,255,.4);font-family:monospace}
+.nav-avatar{width:30px;height:30px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+.nav-userinfo{text-align:right}
 .nav-userinfo strong{font-size:11px;color:#fff;display:block;line-height:1.2}
 .nav-userinfo span{font-size:9px;color:#6fa8d8}
 .nav-action{font-size:10px;padding:4px 10px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:transparent;color:#9bc4e8;cursor:pointer;font-family:inherit;white-space:nowrap}
 .nav-action:hover{background:rgba(255,255,255,.1);color:#fff}
 .nav-action.admin{border-color:rgba(239,159,39,.4);color:#EF9F27}
 .nav-action.admin:hover{background:rgba(239,159,39,.1)}
+.nav-crit-badge{background:#E24B4A;color:#fff;font-size:8px;font-weight:700;padding:1px 5px;border-radius:8px;margin-left:2px}
 
 /* HOME */
 .mod-wrap{flex:1;padding:1.25rem;max-width:1600px;margin:0 auto;width:100%}
-.hero-banner{background:var(--navy);border-radius:16px;padding:1.75rem 2rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1.5rem;position:relative;overflow:hidden}
-.hero-flowers{position:absolute;right:0;top:0;bottom:0;width:160px;display:flex;align-items:center;justify-content:center;font-size:56px;opacity:.1;pointer-events:none;letter-spacing:-8px}
-.hero-tag{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:10px;color:rgba(255,255,255,.7);margin-bottom:10px;border:1px solid rgba(255,255,255,.1)}
+.hero-banner{background:var(--navy);border-radius:16px;padding:1.5rem 2rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1.5rem;position:relative;overflow:hidden}
+.hero-flowers{position:absolute;right:2rem;top:50%;transform:translateY(-50%);font-size:70px;opacity:.06;pointer-events:none;letter-spacing:-4px}
+.hero-tag{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.08);border-radius:20px;padding:3px 10px;font-size:10px;color:rgba(255,255,255,.6);margin-bottom:10px;border:1px solid rgba(255,255,255,.1)}
 .hero-title{font-size:20px;font-weight:800;color:#fff;margin-bottom:.3rem}
-.hero-sub{font-size:12px;color:rgba(255,255,255,.65);line-height:1.5;max-width:420px}
-.hero-stats{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap}
-.hstat{background:rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;border:1px solid rgba(255,255,255,.1)}
-.hstat .hn{font-size:18px;font-weight:700;color:#fff;font-family:monospace}
-.hstat .hl{font-size:9px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.07em;margin-top:1px}
+.hero-sub{font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;max-width:420px}
+.hero-stats{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.hstat{background:rgba(255,255,255,.07);border-radius:10px;padding:10px 16px;border:1px solid rgba(255,255,255,.08)}
+.hstat .hn{font-size:20px;font-weight:800;color:#fff;font-family:monospace;line-height:1}
+.hstat .hl{font-size:9px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.07em;margin-top:3px}
+.hstat.danger{border-color:rgba(226,75,74,.4);background:rgba(226,75,74,.15)}
+.hstat.danger .hn{color:#F09595}
 .section-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
-.home-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:1.25rem}
-.hcard{background:var(--white);border:0.5px solid var(--border);border-radius:14px;padding:1.25rem 1.5rem;cursor:pointer;transition:all .2s;border-top:3px solid var(--border);position:relative}
-.hcard:hover{box-shadow:0 6px 24px rgba(15,42,74,.12);transform:translateY(-2px);border-top-color:var(--blue)}
-.hcard.ok-blue{border-top-color:var(--blue)}
-.hcard.ok-green{border-top-color:var(--ok)}
-.hcard.dim{opacity:.55;cursor:default}
-.hcard-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.75rem}
-.hcard-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.home-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:1.25rem}
+.hcard{background:var(--white);border:0.5px solid var(--border);border-radius:14px;padding:1.25rem 1.5rem;cursor:pointer;transition:all .18s;position:relative;overflow:hidden}
+.hcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#c8ddf0;border-radius:14px 14px 0 0;transition:background .18s}
+.hcard.ok-blue::before{background:var(--blue)}
+.hcard.ok-green::before{background:var(--ok)}
+.hcard:hover{box-shadow:0 8px 28px rgba(15,42,74,.1);transform:translateY(-3px)}
+.hcard.dim{opacity:.5;cursor:default}
+.hcard.dim:hover{transform:none;box-shadow:none}
+.hcard-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.85rem}
+.hcard-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px}
 .hcard-badge{font-size:9px;padding:3px 9px;border-radius:20px;font-weight:700}
 .badge-ok{background:var(--okl);color:var(--ok)}
+.badge-warn{background:#FAEEDA;color:#633806}
 .badge-dim{background:#f0f0f0;color:#888}
 .hcard-title{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:.3rem}
-.hcard-desc{font-size:11px;color:var(--muted);line-height:1.5}
-.hcard-arrow{position:absolute;right:1rem;top:50%;transform:translateY(-50%);color:#c8ddf0;font-size:20px}
-.bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hcard-desc{font-size:11px;color:var(--muted);line-height:1.6}
+.hcard-footer{margin-top:.85rem;padding-top:.75rem;border-top:0.5px solid #f0f4f8;display:flex;align-items:center;justify-content:space-between}
+.hcard-footer-txt{font-size:10px;color:var(--muted)}
+.hcard-arrow{font-size:18px;color:#c8ddf0}
+.bottom-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}
 .panel{background:var(--white);border-radius:12px;padding:1rem 1.25rem;border:0.5px solid var(--border)}
-.panel-title{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:.75rem;display:flex;align-items:center;gap:6px}
-.act-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid #f0f4f8}
-.act-item:last-child{border-bottom:none}
-.act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.act-dot.red{background:#E24B4A}.act-dot.green{background:var(--ok)}.act-dot.blue{background:var(--blue)}.act-dot.amber{background:#EF9F27}
-.act-text{flex:1;font-size:11px;color:var(--text)}
-.act-text span{display:block;font-size:10px;color:var(--muted)}
-.act-time{font-size:10px;color:var(--muted);white-space:nowrap}
-.tip-item{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:0.5px solid #f0f4f8}
-.tip-item:last-child{border-bottom:none}
-.tip-num{width:18px;height:18px;border-radius:50%;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--blue);flex-shrink:0;margin-top:1px}
-.tip-text{font-size:11px;color:var(--muted);line-height:1.4}
+.panel-title{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:.85rem;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.06em}
+.tip-item{display:flex;align-items:flex-start;gap:10px;margin-bottom:.65rem}
+.tip-item:last-child{margin-bottom:0}
+.tip-num{width:20px;height:20px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;margin-top:1px}
+.tip-text{font-size:11px;color:var(--muted);line-height:1.5}
 .tip-text strong{color:var(--navy)}
+.status-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:#f8fbff;border-radius:8px;border:0.5px solid #e8f0f8;margin-bottom:6px}
+.status-item:last-child{margin-bottom:0}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.status-info{flex:1}
+.status-info strong{font-size:11px;color:var(--navy);display:block}
+.status-info span{font-size:10px;color:var(--muted)}
+.status-badge{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:700}
+.sb-ok{background:#e2f5eb;color:#1a6b3a}
+.sb-warn{background:#FAEEDA;color:#633806}
+.home-footer{margin-top:1rem;padding-top:.75rem;border-top:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.home-footer span{font-size:10px;color:#a0b4c8}
 
 /* MI CUENTA */
 .cuenta-wrap{max-width:480px;margin:1rem auto}
@@ -140,45 +166,57 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#eef2f7;color:var
 <body>
 
 <div id="login-screen">
+  <div class="login-bg-grid"></div>
+  <div class="login-bg-glow"></div>
   <div class="login-card">
     <div class="login-brand">
-      <div class="brand-icon">🌸</div>
+      <div class="brand-icon"><i class="ti ti-plant" style="font-size:22px;color:#9bc4e8" aria-hidden="true"></i></div>
       <div>
-        <div class="brand-name">DISTRIBUCIÓN KROGER</div>
-        <div class="brand-sub">Floral Operations Platform</div>
+        <div class="brand-name">DK FLORAL OPS</div>
+        <div class="brand-sub">Kroger Distribution</div>
       </div>
     </div>
-    <div class="login-title">Iniciar sesión</div>
-    <div class="lfield"><label>Usuario</label><input type="text" id="inp-user" placeholder="tu usuario" autocomplete="username"></div>
-    <div class="lfield"><label>Contraseña</label><input type="password" id="inp-pass" placeholder="••••••••" autocomplete="current-password"></div>
-    <button class="login-btn" id="btn-login">Entrar →</button>
+    <div class="login-divider"></div>
+    <div class="login-secure"><i class="ti ti-lock" style="font-size:10px" aria-hidden="true"></i> Acceso seguro · Solo personal autorizado</div>
+    <div class="login-title">Bienvenido</div>
+    <div class="login-subtitle">Inicia sesión para acceder al centro de operaciones.</div>
+    <div class="lfield">
+      <label>Usuario</label>
+      <div class="lfield-wrap"><i class="ti ti-user" aria-hidden="true"></i><input type="text" id="inp-user" placeholder="tu usuario" autocomplete="username"></div>
+    </div>
+    <div class="lfield">
+      <label>Contraseña</label>
+      <div class="lfield-wrap"><i class="ti ti-lock" aria-hidden="true"></i><input type="password" id="inp-pass" placeholder="••••••••" autocomplete="current-password"></div>
+    </div>
+    <button class="login-btn" id="btn-login"><i class="ti ti-login" style="font-size:15px" aria-hidden="true"></i> Ingresar</button>
     <div class="login-err" id="login-err">Usuario o contraseña incorrectos</div>
-    <div class="login-footer">Solo personal autorizado · DK Floral Ops</div>
+    <div class="login-footer"><p><strong>Distribución Kroger Floral</strong><br>Fort Gillem · Atlanta, GA</p></div>
   </div>
 </div>
 
 <div id="app-screen">
   <nav class="app-navbar">
     <div class="nav-logo">
-      <div class="nav-flower">🌸</div>
+      <div class="nav-flower"><i class="ti ti-plant" style="font-size:16px;color:#9bc4e8" aria-hidden="true"></i></div>
       <div>
-        <div class="nav-brand-name">DISTRIBUCIÓN KROGER</div>
-        <div class="nav-brand-sub">FLORAL OPERATIONS</div>
+        <div class="nav-brand-name">DK FLORAL OPS</div>
+        <div class="nav-brand-sub">KROGER DISTRIBUTION</div>
       </div>
     </div>
     <div class="nav-modules">
-      <button class="nav-mod active" id="btn-home">🏠 Inicio</button>
-      <button class="nav-mod" id="btn-comp">📊 Comparador</button>
-      <button class="nav-mod" id="btn-seg">📅 Seguimiento ITN</button>
+      <button class="nav-mod active" id="btn-home"><i class="ti ti-home" style="font-size:13px" aria-hidden="true"></i> Inicio</button>
+      <button class="nav-mod" id="btn-comp"><i class="ti ti-chart-bar" style="font-size:13px" aria-hidden="true"></i> Comparador</button>
+      <button class="nav-mod" id="btn-seg"><i class="ti ti-calendar-stats" style="font-size:13px" aria-hidden="true"></i> Seguimiento ITN <span class="nav-crit-badge" id="nav-crit-badge" style="display:none">!</span></button>
     </div>
     <div class="nav-right">
-      <div class="nav-avatar" id="nav-avatar">--</div>
+      <div class="nav-clock" id="nav-clock"></div>
       <div class="nav-userinfo">
         <strong id="nav-username"></strong>
         <span id="nav-userid"></span>
       </div>
-      <button class="nav-action admin" id="btn-admin" style="display:none">👑 Admin</button>
-      <button class="nav-action" id="btn-cuenta">⚙️ Mi cuenta</button>
+      <div class="nav-avatar" id="nav-avatar">--</div>
+      <button class="nav-action admin" id="btn-admin" style="display:none"><i class="ti ti-crown" style="font-size:12px" aria-hidden="true"></i> Admin</button>
+      <button class="nav-action" id="btn-cuenta"><i class="ti ti-settings" style="font-size:12px" aria-hidden="true"></i> Mi cuenta</button>
       <button class="nav-action" id="btn-logout">Salir</button>
     </div>
   </nav>
@@ -188,13 +226,14 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#eef2f7;color:var
     <div class="hero-banner">
       <div class="hero-flowers">🌹🌸🌺🌷</div>
       <div style="flex:1;position:relative;z-index:1">
-        <div class="hero-tag">🌸 Floral Distribution · Kroger Partner</div>
+        <div class="hero-tag"><i class="ti ti-building-store" style="font-size:11px" aria-hidden="true"></i> Kroger Floral Partner · Fort Gillem</div>
         <div class="hero-title">Bienvenido, <span id="banner-name"></span></div>
-        <div class="hero-sub">Centro de operaciones para pedidos, comparación y seguimiento de órdenes Kroger.</div>
+        <div class="hero-sub">Centro de operaciones para pedidos, comparación y seguimiento de distribución floral Kroger.</div>
         <div class="hero-stats">
           <div class="hstat"><div class="hn">2</div><div class="hl">Módulos activos</div></div>
           <div class="hstat"><div class="hn" id="stat-users">7</div><div class="hl">Usuarios</div></div>
-          <div class="hstat"><div class="hn" id="stat-date">--</div><div class="hl">Fecha de hoy</div></div>
+          <div class="hstat danger"><div class="hn" id="stat-crit">—</div><div class="hl">POs críticos</div></div>
+          <div class="hstat"><div class="hn" id="stat-date">--</div><div class="hl">Hoy</div></div>
         </div>
       </div>
     </div>
@@ -203,48 +242,58 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#eef2f7;color:var
     <div class="home-cards">
       <div class="hcard ok-blue" id="card-comp">
         <div class="hcard-head">
-          <div class="hcard-icon" style="background:#deeaf7">📊</div>
-          <span class="hcard-badge badge-ok">✅ Activo</span>
+          <div class="hcard-icon" style="background:#deeaf7"><i class="ti ti-chart-bar" style="font-size:22px;color:#1a5fa8" aria-hidden="true"></i></div>
+          <span class="hcard-badge badge-ok">Activo</span>
         </div>
         <div class="hcard-title">Comparador Kroger</div>
-        <div class="hcard-desc">Cruza ITN vs WO vs Facturación. Detecta diferencias por SKU, carrier y fecha de envío.</div>
-        <div class="hcard-arrow">›</div>
+        <div class="hcard-desc">Cruza ITN vs WO vs Facturación. Detecta diferencias por SKU, carrier y monto.</div>
+        <div class="hcard-footer">
+          <span class="hcard-footer-txt"><i class="ti ti-clock" style="font-size:11px;vertical-align:-1px" aria-hidden="true"></i> Listo para usar</span>
+          <span class="hcard-arrow">›</span>
+        </div>
       </div>
       <div class="hcard ok-green" id="card-seg">
         <div class="hcard-head">
-          <div class="hcard-icon" style="background:#e2f5eb">📅</div>
-          <span class="hcard-badge badge-ok">✅ Activo</span>
+          <div class="hcard-icon" style="background:#e2f5eb"><i class="ti ti-calendar-stats" style="font-size:22px;color:#1a6b3a" aria-hidden="true"></i></div>
+          <span class="hcard-badge badge-warn" id="seg-badge">Activo</span>
         </div>
         <div class="hcard-title">Seguimiento Diario ITN</div>
-        <div class="hcard-desc">Historial diario de pedidos. Críticos, cambios, entregas y comparación con WO.</div>
-        <div class="hcard-arrow">›</div>
+        <div class="hcard-desc">Historial diario de pedidos. Críticos, cambios, entregas y verificación WO.</div>
+        <div class="hcard-footer">
+          <span class="hcard-footer-txt"><i class="ti ti-clock" style="font-size:11px;vertical-align:-1px" aria-hidden="true"></i> Listo para usar</span>
+          <span class="hcard-arrow">›</span>
+        </div>
       </div>
       <div class="hcard dim">
         <div class="hcard-head">
-          <div class="hcard-icon" style="background:#f0f0f0">📦</div>
-          <span class="hcard-badge badge-dim">🔒 Próximamente</span>
+          <div class="hcard-icon" style="background:#f0f0f0"><i class="ti ti-package" style="font-size:22px;color:#aaa" aria-hidden="true"></i></div>
+          <span class="hcard-badge badge-dim">Próximamente</span>
         </div>
         <div class="hcard-title">Módulo 3</div>
         <div class="hcard-desc">En desarrollo para el equipo de operaciones florales.</div>
+        <div class="hcard-footer"><span class="hcard-footer-txt">Sin fecha estimada</span></div>
       </div>
     </div>
 
     <div class="bottom-grid">
       <div class="panel">
-        <div class="panel-title">📋 Guía rápida</div>
-        <div class="tip-item"><div class="tip-num">1</div><div class="tip-text">Nombra el ITN con fecha: <strong>03-06-2026_ITN.xlsx</strong> para detección automática del día</div></div>
-        <div class="tip-item"><div class="tip-num">2</div><div class="tip-text">Usa <strong>"Ver hoy"</strong> en Seguimiento para ver los POs con ship date de hoy primero</div></div>
-        <div class="tip-item"><div class="tip-num">3</div><div class="tip-text">Filtra por <strong>🚨 Críticos</strong> para identificar pedidos con ship date vencida sin entregar</div></div>
-        <div class="tip-item"><div class="tip-num">4</div><div class="tip-text">Carga el <strong>WO</strong> en Seguimiento para verificar qué POs tienen orden de trabajo creada</div></div>
-        <div class="tip-item"><div class="tip-num">5</div><div class="tip-text">En el Comparador carga <strong>ITN → WO → Facturación</strong> en ese orden para mejor comparación</div></div>
+        <div class="panel-title"><i class="ti ti-list-check" style="font-size:14px;color:#1a5fa8" aria-hidden="true"></i> Guía rápida</div>
+        <div class="tip-item"><div class="tip-num">1</div><div class="tip-text">Nombra el archivo: <strong>03-06-2026_ITN.xlsx</strong> para detección automática del día</div></div>
+        <div class="tip-item"><div class="tip-num">2</div><div class="tip-text">Usa <strong>Ver hoy</strong> en Seguimiento para priorizar POs con ship date de hoy</div></div>
+        <div class="tip-item"><div class="tip-num">3</div><div class="tip-text">Filtra por <strong>Críticos</strong> para identificar pedidos con ship date vencida</div></div>
+        <div class="tip-item"><div class="tip-num">4</div><div class="tip-text">Carga <strong>ITN → WO → Facturación</strong> en ese orden en el Comparador</div></div>
+        <div class="tip-item"><div class="tip-num">5</div><div class="tip-text">El ícono <strong>🚚</strong> indica el día exacto que llegó el carrier al PO</div></div>
       </div>
       <div class="panel">
-        <div class="panel-title">ℹ️ Acerca del sistema</div>
-        <div class="act-item"><div class="act-dot blue"></div><div class="act-text">Comparador Kroger<span>Compara ITN vs WO vs Facturación por SKU y carrier</span></div></div>
-        <div class="act-item"><div class="act-dot green"></div><div class="act-text">Seguimiento ITN<span>Historial 7 días · Críticos · Cambios · WO Check</span></div></div>
-        <div class="act-item"><div class="act-dot amber"></div><div class="act-text">Contraseñas personalizables<span>Cada usuario puede cambiar su contraseña en Mi Cuenta</span></div></div>
-        <div class="act-item"><div class="act-dot red"></div><div class="act-text">Panel de Administración<span>Solo accesible para el administrador del sistema</span></div></div>
+        <div class="panel-title"><i class="ti ti-circle-check" style="font-size:14px;color:#1a5fa8" aria-hidden="true"></i> Estado del sistema</div>
+        <div class="status-item"><div class="status-dot" style="background:#1a6b3a"></div><div class="status-info"><strong>Comparador Kroger</strong><span>ITN vs WO vs Facturación · Sin errores</span></div><span class="status-badge sb-ok">OK</span></div>
+        <div class="status-item"><div class="status-dot" style="background:#EF9F27"></div><div class="status-info"><strong>Seguimiento ITN</strong><span>Historial 7 días · Críticos y cambios activos</span></div><span class="status-badge sb-warn">Alerta</span></div>
+        <div class="status-item"><div class="status-dot" style="background:#1a5fa8"></div><div class="status-info"><strong>Usuarios activos</strong><span id="status-users">7 cuentas configuradas</span></div><span class="status-badge sb-ok">OK</span></div>
       </div>
+    </div>
+    <div class="home-footer">
+      <span>DK Floral Ops · GitHub Pages</span>
+      <span>Solo personal autorizado · Kroger Distribution Partner</span>
     </div>
   </div>
 
@@ -340,7 +389,7 @@ function setPass(u,p){ var usr=USERS.find(function(x){return x.u===u;}); if(usr)
 
 loadUsers();
 
-// Date on hero
+// Date on hero + clock
 (function(){
   var d=new Date();
   var days=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
@@ -349,7 +398,17 @@ loadUsers();
   if(el) el.textContent=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()];
   var su=document.getElementById('stat-users');
   if(su) su.textContent=USERS.length;
+  var statusU=document.getElementById('status-users');
+  if(statusU) statusU.textContent=USERS.length+' cuentas configuradas';
 })();
+function updateClock(){
+  var d=new Date();var h=d.getHours(),m=d.getMinutes(),ap=h>=12?'PM':'AM';
+  h=h%12||12;
+  var el=document.getElementById('nav-clock');
+  if(el) el.textContent=h+':'+(m<10?'0'+m:m)+' '+ap;
+}
+updateClock();
+setInterval(updateClock,30000);
 
 function showMod(m){
   ['mod-home','mod-comp','mod-seg','mod-cuenta','mod-admin'].forEach(function(id){
@@ -373,21 +432,38 @@ function doLogin(){
   if(!found||p!==found.p){
     document.getElementById('login-err').style.display='block';
     document.getElementById('inp-pass').value='';
+    // Shake animation
+    var card=document.querySelector('.login-card');
+    if(card){card.style.transform='translateX(8px)';setTimeout(function(){card.style.transform='translateX(-8px)';setTimeout(function(){card.style.transform='';},80);},80);}
     return;
   }
-  CUR=found;
-  document.getElementById('login-err').style.display='none';
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('app-screen').style.display='flex';
+  // Show spinner
+  var btn=document.getElementById('btn-login');
+  btn.innerHTML='<i class="ti ti-loader-2" style="font-size:15px;animation:lspin .7s linear infinite" aria-hidden="true"></i> Verificando...';
+  btn.disabled=true;
+  if(!document.getElementById('lspin-style')){
+    var s=document.createElement('style');s.id='lspin-style';
+    s.textContent='@keyframes lspin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(s);
+  }
+  setTimeout(function(){
+    btn.innerHTML='<i class="ti ti-login" style="font-size:15px" aria-hidden="true"></i> Ingresar';
+    btn.disabled=false;
+    CUR=found;
+    document.getElementById('login-err').style.display='none';
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app-screen').style.display='flex';
   var init=found.n.split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
   document.getElementById('nav-avatar').textContent=init;
   document.getElementById('nav-username').textContent=found.n;
   document.getElementById('nav-userid').textContent=found.u;
   document.getElementById('banner-name').textContent=found.n.split(' ')[0];
   document.getElementById('stat-users').textContent=USERS.length;
-  if(found.admin) document.getElementById('btn-admin').style.display='';
-  else document.getElementById('btn-admin').style.display='none';
-  showMod('home');
+    if(found.admin) document.getElementById('btn-admin').style.display='';
+    else document.getElementById('btn-admin').style.display='none';
+    showMod('home');
+    updateClock();
+  },600);
 }
 
 function doLogout(){
