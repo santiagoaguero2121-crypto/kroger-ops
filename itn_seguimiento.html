@@ -94,12 +94,16 @@ tr.row-gone td{border-left:3px solid #bbb;opacity:.55}
 .det-tbl td{padding:4px 8px;border-bottom:0.5px solid #f0f4f8;text-align:right}
 .det-tbl td.tl{text-align:left}
 .det-tbl tr:last-child td{border-bottom:none}
-.det-tbl tr.sku-warn td{background:#FAEEDA;border-left:3px solid #EF9F27}
-.det-tbl tr.sku-warn td:first-child{padding-left:6px}
-.det-tbl tr.sku-new td{background:#EAF3DE;border-left:3px solid #639922}
-.det-tbl tr.sku-new td:first-child{padding-left:6px;color:#3B6D11}
-.det-tbl tr.sku-gone td{background:#FCEBEB;border-left:3px solid #E24B4A;color:#791F1F}
-.det-tbl tr.sku-gone td:first-child{padding-left:6px}
+.det-tbl tr.sku-add td{background:#EAF3DE !important;border-left:3px solid #639922;color:#27500A !important}
+.det-tbl tr.sku-add td:first-child{padding-left:6px;color:#27500A !important}
+.det-tbl tr.sku-warn td{background:#FAEEDA !important;border-left:3px solid #EF9F27;color:#633806 !important}
+.det-tbl tr.sku-warn td:first-child{padding-left:6px;color:#633806 !important}
+.det-tbl tr.sku-new td{background:#EAF3DE !important;border-left:3px solid #639922;color:#27500A !important}
+.det-tbl tr.sku-new td:first-child{padding-left:6px;color:#27500A !important}
+.det-tbl tr.sku-gone td{background:#FCEBEB !important;border-left:3px solid #E24B4A;color:#791F1F !important}
+.det-tbl tr.sku-gone td:first-child{padding-left:6px;color:#791F1F !important}
+.det-tbl tr.sku-zero td{background:#FCEBEB !important;border-left:3px solid #E24B4A;color:#791F1F !important}
+.det-tbl tr.sku-zero td:first-child{padding-left:6px;color:#A32D2D !important}
 .sortable{cursor:pointer;user-select:none}
 .sortable:hover{background:var(--light)!important;color:var(--navy)!important}
 .xbtn{background:none;border:0.5px solid var(--border);border-radius:4px;cursor:pointer;font-size:13px;padding:1px 8px;color:var(--muted);font-family:inherit}
@@ -170,19 +174,6 @@ tr.row-gone td{border-left:3px solid #bbb;opacity:.55}
       <option value="gone">❌ Eliminados</option>
       <option value="same">Sin cambio</option>
     </select>
-    <label>Ship Date:</label>
-    <div style="position:relative;display:inline-block" id="ship-dd-wrap">
-      <button id="ship-dd-btn" onclick="toggleShipDD()" style="font-size:11px;padding:4px 10px;border:0.5px solid var(--border);border-radius:6px;background:var(--white);color:var(--text);height:28px;cursor:pointer;font-family:inherit;min-width:150px;display:flex;align-items:center;justify-content:space-between;gap:6px">
-        <span id="ship-dd-label">Todas las fechas</span><span style="font-size:9px;color:var(--muted)" id="ship-dd-arrow">▼</span>
-      </button>
-      <div id="ship-dd-menu" style="display:none;position:absolute;top:32px;left:0;background:var(--white);border:0.5px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:999;min-width:210px;padding:4px 0">
-        <div id="ship-dd-items"></div>
-        <div style="border-top:0.5px solid var(--border);padding:5px 10px;display:flex;justify-content:space-between;align-items:center">
-          <button onclick="clearShipDates()" style="font-size:10px;background:none;border:none;color:var(--muted);cursor:pointer;font-family:inherit">Limpiar</button>
-          <span style="font-size:10px;color:var(--muted)" id="ship-dd-count">0 fechas</span>
-        </div>
-      </div>
-    </div>
     <button id="btn-hoy" class="bclear" onclick="toggleToday()" style="color:var(--blue);font-weight:700;border-color:var(--blue)">📅 Ver hoy</button>
     <label>Desde:</label>
     <input type="date" id="f-from" onchange="applyF()" style="font-size:11px;padding:3px 7px;border:0.5px solid var(--border);border-radius:6px;background:var(--white);color:var(--text);height:28px;font-family:inherit">
@@ -806,20 +797,26 @@ function renderTable(){
     html+='<td class="tl">'+div+'</td>';
     html+='<td class="tl">'+shipCell+shipBadge+'</td>';
     html+='<td class="tl" style="font-size:11px">'+carrierCell+'</td>';
+    // Find last day index with data and previous
+    var lastDayIdx=-1, prevDayIdx=-1;
+    for(var di=HIST_DATA.length-1;di>=0;di--){ if(r.days[di]){lastDayIdx=di;break;} }
+    for(var di=lastDayIdx-1;di>=0;di--){ if(r.days[di]){prevDayIdx=di;break;} }
+    var mainQdiff=lastDayIdx>=0&&prevDayIdx>=0?Math.round(r.days[lastDayIdx].qty-r.days[prevDayIdx].qty):null;
     for(var d=0;d<HIST_DATA.length;d++){
       var dd=r.days[d];
       if(!dd){ html+='<td class="qty-empty">—</td>'; continue; }
-      var prevDd=null;
-      for(var pi=d-1;pi>=0;pi--){ if(r.days[pi]){prevDd=r.days[pi];break;} }
       var truckIcon=d===r.carrierDayIdx?'<span title="'+r.carrier+'" style="cursor:default"> 🚚</span>':'';
-      var qStyle='font-family:monospace;font-weight:700;';
-      if(prevDd){
-        var qdiff=Math.round(dd.qty-prevDd.qty);
-        if(qdiff>0) qStyle+='color:var(--ok)';
-        else if(qdiff<0) qStyle+='color:var(--danger)';
-        else qStyle+='color:var(--navy)';
-      } else { qStyle+='color:var(--navy)'; }
-      html+='<td><span style="'+qStyle+'">'+fN(dd.qty)+'</span>'+truckIcon+'</td>';
+      var isChangedDay=d===lastDayIdx&&mainQdiff!==null&&mainQdiff!==0;
+      var isGoneDay=d===lastDayIdx&&r.isGone;
+      if(isGoneDay){
+        html+='<td><span style="display:inline-block;font-family:monospace;font-weight:800;background:#E24B4A;border-radius:5px;padding:2px 8px;color:#fff;min-width:24px;text-align:center">—</span>'+truckIcon+'</td>';
+      } else if(isChangedDay&&mainQdiff<0){
+        html+='<td><span style="display:inline-block;font-family:monospace;font-weight:800;background:#E24B4A;border-radius:5px;padding:2px 8px;color:#fff;min-width:24px;text-align:center">'+fN(dd.qty)+'</span>'+truckIcon+'</td>';
+      } else if(isChangedDay&&mainQdiff>0){
+        html+='<td><span style="display:inline-block;font-family:monospace;font-weight:800;background:#3B8F1A;border-radius:5px;padding:2px 8px;color:#fff;min-width:24px;text-align:center">'+fN(dd.qty)+'</span>'+truckIcon+'</td>';
+      } else {
+        html+='<td><span style="font-family:monospace;font-weight:700;color:var(--navy)">'+fN(dd.qty)+'</span>'+truckIcon+'</td>';
+      }
     }
     html+='<td class="tc">'+statusBadge(r.status,r.dQ,r.daysOverdue,r.noCar)+'</td>';
     html+='<td><button class="xbtn" onclick="tog(\''+id+'\')">'+( exp?'▲':'▼')+'</button></td>';
@@ -860,7 +857,6 @@ function buildDetail(r,cols){
   keys.forEach(function(k){
     var p=r.prods[k];
     var dayQtys=HIST_DATA.map(function(d){ var dp=d.pos[r.po]; return (dp&&dp.prods&&dp.prods.hasOwnProperty(k))?Math.round(dp.prods[k].qty):null; });
-    // lastQ = exact value on last loaded day (null if absent)
     var lastQ=dayQtys.length?dayQtys[dayQtys.length-1]:null;
     var prevQ=null;
     for(var i=dayQtys.length-2;i>=0;i--){ if(dayQtys[i]!==null){prevQ=dayQtys[i];break;} }
@@ -868,8 +864,7 @@ function buildDetail(r,cols){
     var isSkuNew=lastQ!==null&&prevQ===null;
     var isSkuGone=lastQ===null&&prevQ!==null;
     var isSkuZero=lastQ===0&&prevQ!==null&&prevQ>0;
-    var rowCls=isSkuZero?'sku-zero':(isSkuNew?'sku-new':(isSkuGone?'sku-gone':(diff&&diff<0?'sku-warn':'')));
-    // Find the day index where change happened
+    var rowCls=isSkuZero?'sku-zero':(isSkuNew?'sku-new':(isSkuGone?'sku-gone':(diff&&diff<0?'sku-warn':(diff&&diff>0?'sku-add':''))));
     var changeDayIdx=-1;
     if(isSkuGone){ changeDayIdx=dayQtys.length-1; }
     else if(isSkuNew){ for(var i=0;i<dayQtys.length;i++){ if(dayQtys[i]!==null){changeDayIdx=i;break;} } }
@@ -878,22 +873,20 @@ function buildDetail(r,cols){
               :isSkuNew?'<span style="font-size:9px;background:#C0DD97;color:#27500A;padding:2px 7px;border-radius:3px;font-weight:700;border:1px solid #97C459">ADD</span>'
               :isSkuGone?'<span style="font-size:9px;background:#F7C1C1;color:#791F1F;padding:2px 7px;border-radius:3px;font-weight:700;border:1px solid #F09595">CANCEL</span>'
               :diff?'<span style="font-size:9px;background:'+(diff<0?'#FAEEDA':'#EAF3DE')+';color:'+(diff<0?'#633806':'#27500A')+';padding:0 6px;border-radius:3px;font-weight:700;border:1px solid '+(diff<0?'#EF9F27':'#97C459')+'">'+(diff>0?'+':'')+diff+'</span>'
-              :'<span style="color:var(--muted)">\u2014</span>';
-    tbl+='<tr class="'+rowCls+'"><td class="tl" style="font-family:monospace;font-size:10px;color:var(--muted)">'+k+'</td><td class="tl">'+p.desc+'</td>';
+              :'<span style="color:var(--muted)">—</span>';
+    tbl+='<tr class="'+rowCls+'"><td class="tl" style="font-family:monospace;font-size:10px">'+k+'</td><td class="tl">'+p.desc+'</td>';
     dayQtys.forEach(function(q,qi){
       var isChange=qi===changeDayIdx;
       if(q===null){
-        if(isChange&&isSkuGone) tbl+='<td><span style="font-family:monospace;font-weight:700;background:rgba(226,75,74,.2);border-radius:4px;padding:1px 5px;color:#E24B4A;outline:1px solid #E24B4A">\u2014</span></td>';
-        else tbl+='<td style="color:#c5d5e5">\u2014</td>';
+        if(isChange&&isSkuGone) tbl+='<td><span style="display:inline-block;font-family:monospace;font-weight:800;background:#E24B4A;border-radius:5px;padding:2px 8px;color:#fff;min-width:20px;text-align:center">—</span></td>';
+        else tbl+='<td style="color:#c5d5e5">—</td>';
       } else if(isChange&&isSkuNew){
-        tbl+='<td><span style="font-family:monospace;font-weight:700;background:rgba(99,153,34,.2);border-radius:4px;padding:1px 5px;color:#27500A;outline:1px solid #639922">'+q+'</span></td>';
+        tbl+='<td><span style="display:inline-block;font-family:monospace;font-weight:800;background:#3B8F1A;border-radius:5px;padding:2px 8px;color:#fff;min-width:20px;text-align:center">'+q+'</span></td>';
       } else if(isChange&&diff&&diff!==0){
-        var cc=diff<0?'rgba(226,75,74,.2)':'rgba(99,153,34,.2)';
-        var tc=diff<0?'#E24B4A':'#27500A';
-        var oc=diff<0?'#E24B4A':'#639922';
-        tbl+='<td><span style="font-family:monospace;font-weight:700;background:'+cc+';border-radius:4px;padding:1px 5px;color:'+tc+';outline:1px solid '+oc+'">'+q+'</span></td>';
+        var bg=diff<0?'#E24B4A':'#3B8F1A';
+        tbl+='<td><span style="display:inline-block;font-family:monospace;font-weight:800;background:'+bg+';border-radius:5px;padding:2px 8px;color:#fff;min-width:20px;text-align:center">'+q+'</span></td>';
       } else {
-        tbl+='<td style="font-family:monospace;font-weight:700">'+q+'</td>';
+        tbl+='<td style="font-family:monospace;font-weight:600">'+q+'</td>';
       }
     });
     tbl+='<td>'+dBadge+'</td></tr>';
