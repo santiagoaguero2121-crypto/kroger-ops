@@ -183,7 +183,11 @@ tr.row-gone td{border-left:3px solid #bbb;opacity:.55}
         </div>
       </div>
     </div>
-    <button class="bclear" onclick="setToday()" style="background:var(--light);color:var(--blue);font-weight:700;border-color:var(--blue)">📅 Ver hoy</button>
+    <button id="btn-hoy" class="bclear" onclick="toggleToday()" style="color:var(--blue);font-weight:700;border-color:var(--blue)">📅 Ver hoy</button>
+    <label>Desde:</label>
+    <input type="date" id="f-from" onchange="applyF()" style="font-size:11px;padding:3px 7px;border:0.5px solid var(--border);border-radius:6px;background:var(--white);color:var(--text);height:28px;font-family:inherit">
+    <label>Hasta:</label>
+    <input type="date" id="f-to" onchange="applyF()" style="font-size:11px;padding:3px 7px;border:0.5px solid var(--border);border-radius:6px;background:var(--white);color:var(--text);height:28px;font-family:inherit">
     <label>Día ITN:</label>
     <select id="f-day" onchange="applyF()">
       <option value="">Todos</option>
@@ -706,10 +710,14 @@ function applyF(){
   var regF=(document.getElementById('f-reg')||{value:''}).value||'';
   var divF=document.getElementById('f-div').value;
   var poF=document.getElementById('f-po').value.toLowerCase();
+  var fromF=(document.getElementById('f-from')||{value:''}).value||'';
+  var toF=(document.getElementById('f-to')||{value:''}).value||'';
   FILTERED=_allRows.filter(function(r){
     if(STAT_FILTER==='nocar'&&!r.noCar) return false;
     if(STAT_FILTER&&STAT_FILTER!=='nocar'&&r.status!==STAT_FILTER) return false;
     if(show&&r.status!==show) return false;
+    if(fromF&&r.ship&&toISO(r.ship)<fromF) return false;
+    if(toF&&r.ship&&toISO(r.ship)>toF) return false;
     if(SHIP_SELECTED.size>0&&!SHIP_SELECTED.has(r.ship)) return false;
     if(regF&&divRegion(r.div)!==regF) return false;
     if(divF&&r.div!==divF) return false;
@@ -724,6 +732,11 @@ function applyF(){
 
 function clearF(){
   STAT_FILTER='';
+  HOY_ACTIVE=false;
+  var btn=document.getElementById('btn-hoy');
+  if(btn){btn.style.background='var(--light)';btn.style.color='var(--blue)';}
+  var ff=document.getElementById('f-from'); if(ff) ff.value='';
+  var ft=document.getElementById('f-to'); if(ft) ft.value='';
   ['f-show','f-day','f-reg','f-div'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   SHIP_SELECTED.clear(); buildShipDD(Array.from(document.querySelectorAll('#ship-dd-items div')).map(function(el){var s=el.querySelectorAll('span')[0];return s?s.textContent.trim():'';}));
   document.getElementById('f-po').value='';
@@ -846,21 +859,43 @@ function buildDetail(r,cols){
 
   keys.forEach(function(k){
     var p=r.prods[k];
-    // Get qty per day
-    var dayQtys=HIST_DATA.map(function(d){ return d.pos[r.po]&&d.pos[r.po].prods&&d.pos[r.po].prods[k]?Math.round(d.pos[r.po].prods[k].qty):null; });
-    var lastQ=null,prevQ=null;
-    for(var i=dayQtys.length-1;i>=0;i--){ if(dayQtys[i]!==null){lastQ=dayQtys[i];break;} }
+    var dayQtys=HIST_DATA.map(function(d){ var dp=d.pos[r.po]; return (dp&&dp.prods&&dp.prods.hasOwnProperty(k))?Math.round(dp.prods[k].qty):null; });
+    // lastQ = exact value on last loaded day (null if absent)
+    var lastQ=dayQtys.length?dayQtys[dayQtys.length-1]:null;
+    var prevQ=null;
     for(var i=dayQtys.length-2;i>=0;i--){ if(dayQtys[i]!==null){prevQ=dayQtys[i];break;} }
     var diff=(lastQ!==null&&prevQ!==null)?lastQ-prevQ:null;
     var isSkuNew=lastQ!==null&&prevQ===null;
     var isSkuGone=lastQ===null&&prevQ!==null;
-    var rowCls=isSkuNew?'sku-new':(isSkuGone?'sku-gone':(diff&&Math.abs(diff)>0?'sku-warn':''));
-    var dBadge=isSkuNew?'<span style="font-size:9px;background:#C0DD97;color:#3B6D11;padding:2px 7px;border-radius:3px;font-weight:700;border:1px solid #97C459">✅ ADD</span>'
-              :isSkuGone?'<span style="font-size:9px;background:#F7C1C1;color:#791F1F;padding:2px 7px;border-radius:3px;font-weight:700;border:1px solid #F09595">❌ CANCEL</span>'
-              :diff?'<span style="font-size:9px;background:var(--warnl);color:var(--warn);padding:0 5px;border-radius:3px;font-weight:700">'+(diff>0?'+':'')+diff+'</span>'
-              :'<span style="color:var(--muted)">—</span>';
+    var isSkuZero=lastQ===0&&prevQ!==null&&prevQ>0;
+    var rowCls=isSkuZero?'sku-zero':(isSkuNew?'sku-new':(isSkuGone?'sku-gone':(diff&&diff<0?'sku-warn':'')));
+    // Find the day index where change happened
+    var changeDayIdx=-1;
+    if(isSkuGone){ changeDayIdx=dayQtys.length-1; }
+    else if(isSkuNew){ for(var i=0;i<dayQtys.length;i++){ if(dayQtys[i]!==null){changeDayIdx=i;break;} } }
+    else if(diff&&Math.abs(diff)>0){ changeDayIdx=dayQtys.length-1; }
+    var dBadge=isSkuZero?'<span style="font-size:9px;background:#F7C1C1;color:#791F1F;padding:2px 7px;border-radius:3px;font-weight:700;border:1px solid #F09595">CANCEL</span>'
+              :isSkuNew?'<span style="font-size:9px;background:#C0DD97;color:#27500A;padding:2px 7px;border-radius:3px;font-weight:700;border:1px solid #97C459">ADD</span>'
+              :isSkuGone?'<span style="font-size:9px;background:#F7C1C1;color:#791F1F;padding:2px 7px;border-radius:3px;font-weight:700;border:1px solid #F09595">CANCEL</span>'
+              :diff?'<span style="font-size:9px;background:'+(diff<0?'#FAEEDA':'#EAF3DE')+';color:'+(diff<0?'#633806':'#27500A')+';padding:0 6px;border-radius:3px;font-weight:700;border:1px solid '+(diff<0?'#EF9F27':'#97C459')+'">'+(diff>0?'+':'')+diff+'</span>'
+              :'<span style="color:var(--muted)">\u2014</span>';
     tbl+='<tr class="'+rowCls+'"><td class="tl" style="font-family:monospace;font-size:10px;color:var(--muted)">'+k+'</td><td class="tl">'+p.desc+'</td>';
-    dayQtys.forEach(function(q){ tbl+=q!==null?'<td style="font-family:monospace;font-weight:700">'+q+'</td>':'<td style="color:#c5d5e5">—</td>'; });
+    dayQtys.forEach(function(q,qi){
+      var isChange=qi===changeDayIdx;
+      if(q===null){
+        if(isChange&&isSkuGone) tbl+='<td><span style="font-family:monospace;font-weight:700;background:rgba(226,75,74,.2);border-radius:4px;padding:1px 5px;color:#E24B4A;outline:1px solid #E24B4A">\u2014</span></td>';
+        else tbl+='<td style="color:#c5d5e5">\u2014</td>';
+      } else if(isChange&&isSkuNew){
+        tbl+='<td><span style="font-family:monospace;font-weight:700;background:rgba(99,153,34,.2);border-radius:4px;padding:1px 5px;color:#27500A;outline:1px solid #639922">'+q+'</span></td>';
+      } else if(isChange&&diff&&diff!==0){
+        var cc=diff<0?'rgba(226,75,74,.2)':'rgba(99,153,34,.2)';
+        var tc=diff<0?'#E24B4A':'#27500A';
+        var oc=diff<0?'#E24B4A':'#639922';
+        tbl+='<td><span style="font-family:monospace;font-weight:700;background:'+cc+';border-radius:4px;padding:1px 5px;color:'+tc+';outline:1px solid '+oc+'">'+q+'</span></td>';
+      } else {
+        tbl+='<td style="font-family:monospace;font-weight:700">'+q+'</td>';
+      }
+    });
     tbl+='<td>'+dBadge+'</td></tr>';
   });
   tbl+='</tbody></table>';
@@ -956,19 +991,37 @@ document.addEventListener('click', function(e){
   }
 });
 
-function setToday(){
-  var today=todayISO();
-  var allDates=[];
-  document.querySelectorAll('#ship-dd-items div').forEach(function(el){
-    var span=el.querySelectorAll('span')[0];
-    if(span) allDates.push(span.textContent.trim());
-  });
-  SHIP_SELECTED.clear();
-  var best=allDates.filter(function(d){return toISO(d)>=today;}).sort(function(a,b){return toISO(a)<toISO(b)?-1:1;})[0];
-  if(best) SHIP_SELECTED.add(best);
-  buildShipDD(allDates);
+var HOY_ACTIVE=false;
+function toggleToday(){
+  HOY_ACTIVE=!HOY_ACTIVE;
+  var btn=document.getElementById('btn-hoy');
+  if(btn){
+    btn.style.background=HOY_ACTIVE?'var(--blue)':'var(--light)';
+    btn.style.color=HOY_ACTIVE?'#fff':'var(--blue)';
+  }
+  if(HOY_ACTIVE){
+    var today=todayISO();
+    var allDates=[];
+    document.querySelectorAll('#ship-dd-items div').forEach(function(el){
+      var span=el.querySelectorAll('span')[0];
+      if(span) allDates.push(span.textContent.trim());
+    });
+    SHIP_SELECTED.clear();
+    var best=allDates.filter(function(d){return toISO(d)>=today;}).sort(function(a,b){return toISO(a)<toISO(b)?-1:1;})[0];
+    if(best) SHIP_SELECTED.add(best);
+    buildShipDD(allDates);
+  } else {
+    var allDates=[];
+    document.querySelectorAll('#ship-dd-items div').forEach(function(el){
+      var span=el.querySelectorAll('span')[0];
+      if(span) allDates.push(span.textContent.trim());
+    });
+    SHIP_SELECTED.clear();
+    buildShipDD(allDates);
+  }
   applyF();
 }
+function setToday(){ if(!HOY_ACTIVE){ toggleToday(); } }
 
 function saveNote(po){
   var el=document.getElementById('note-'+po);
