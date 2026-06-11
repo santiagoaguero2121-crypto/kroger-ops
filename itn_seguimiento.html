@@ -698,6 +698,21 @@ function buildTable(){
 var STAT_FILTER='';
 function toggleStatFilter(key){
   STAT_FILTER=STAT_FILTER===key?'':key;
+  // Visual feedback on all stat cards
+  document.querySelectorAll('#stats .stat').forEach(function(el){
+    el.style.outline='';
+    el.style.opacity='1';
+  });
+  if(STAT_FILTER){
+    document.querySelectorAll('#stats .stat').forEach(function(el){
+      var oc=el.getAttribute('onclick')||'';
+      if(oc.indexOf("'"+STAT_FILTER+"'")>=0){
+        el.style.outline='2px solid currentColor';
+      } else {
+        el.style.opacity='0.5';
+      }
+    });
+  }
   applyF();
 }
 function applyF(){
@@ -725,6 +740,8 @@ function applyF(){
 }
 
 function clearF(){
+  STAT_FILTER='';
+  document.querySelectorAll('#stats .stat').forEach(function(el){ el.style.outline=''; el.style.opacity='1'; });
   ['f-show','f-day','f-reg','f-div'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   SHIP_SELECTED.clear(); buildShipDD(Array.from(document.querySelectorAll('#ship-dd-items div')).map(function(el){var s=el.querySelectorAll('span')[0];return s?s.textContent.trim():'';}));
   document.getElementById('f-po').value='';
