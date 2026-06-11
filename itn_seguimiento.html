@@ -30,13 +30,14 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#f0f4f8;color:var
 .hint{font-size:11px;color:var(--muted)}
 .fname{font-size:11px;color:var(--muted);margin-top:.3rem;font-style:italic}
 .sbar{font-size:11px;color:var(--muted);padding:.3rem 0;min-height:18px}
-.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:.6rem}
-.stat{background:var(--white);border:0.5px solid var(--border);border-radius:8px;padding:.4rem .7rem;border-top:3px solid #c8ddf0}
+.stats{display:flex;gap:6px;flex-wrap:nowrap;margin-bottom:.6rem;overflow-x:auto;padding-bottom:2px}
+.stat{background:var(--white);border:0.5px solid var(--border);border-radius:8px;padding:7px 12px;border-top:3px solid #c8ddf0;cursor:pointer;flex:1;min-width:90px;transition:transform .15s}
+.stat:hover{transform:translateY(-2px)}
 .stat.s-crit{border-top-color:#c00;background:var(--critl)}
 .stat.s-ok{border-top-color:var(--ok)}.stat.s-warn{border-top-color:#EF9F27}.stat.s-new{border-top-color:var(--blue)}.stat.s-done{border-top-color:#888}
-.stat .sl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem}
-.stat .sv{font-size:18px;font-weight:700;color:var(--navy);font-family:monospace}
-.stat .ss{font-size:10px;color:var(--muted);margin-top:.1rem}
+.stat .sl{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem;white-space:nowrap}
+.stat .sv{font-size:18px;font-weight:800;color:var(--navy);font-family:monospace;line-height:1}
+.stat .ss{font-size:9px;color:var(--muted);margin-top:2px;white-space:nowrap}
 .days-bar{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
 .day-chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:4px 10px;border-radius:20px;background:var(--white);border:1px solid var(--border)}
 .day-chip .dc-label{font-weight:700;color:var(--navy)}
@@ -337,7 +338,6 @@ var SELECTED={};
 (function(){
   try{ var r=localStorage.getItem(HIST_KEY); if(r) HIST_DATA=JSON.parse(r); }catch(e){}
   if(!Array.isArray(HIST_DATA)) HIST_DATA=[];
-  migrateAllNotes();
   if(HIST_DATA.length>0) buildUI();
 })();
 
@@ -639,7 +639,6 @@ function buildTable(){
   var nNoCar=rows.filter(function(r){return r.noCar;}).length;
   var qCrit=rows.filter(function(r){return r.status==='crit';}).reduce(function(s,r){return s+r.lQ;},0);
 
-  var nNota=0; try{ for(var _i=0;_i<localStorage.length;_i++){ var _k=localStorage.key(_i); if(_k&&(_k.indexOf('notes_v2_')===0)){ var _n=JSON.parse(localStorage.getItem(_k)||'[]'); if(_n.some(function(x){return !x.resolved;})) nNota++; } else if(_k&&_k.indexOf('note_')===0&&_k.indexOf('notes_v2_')<0){ var _v=localStorage.getItem(_k); if(_v&&_v.trim()) nNota++; } } }catch(_e){}
   document.getElementById('stats').innerHTML=
     '<div class="stat s-crit"><div class="sl">🚨 Críticos</div><div class="sv">'+nCrit+'</div><div class="ss">'+Math.round(qCrit).toLocaleString()+' cajas</div></div>'+
     '<div class="stat s-warn"><div class="sl">⚠️ Cambios</div><div class="sv">'+nChanged+'</div><div class="ss">qty diferente</div></div>'+
@@ -647,7 +646,7 @@ function buildTable(){
     '<div class="stat s-ok"><div class="sl">✅ Sin cambio</div><div class="sv">'+nSame+'</div><div class="ss">todo igual</div></div>'+
     '<div class="stat s-done"><div class="sl">📦 Entregados</div><div class="sv">'+nDone+'</div><div class="ss">ship date pasó</div></div>'+
     (nNoCar?'<div class="stat s-crit"><div class="sl">🚚 Sin Carrier</div><div class="sv">'+nNoCar+'</div><div class="ss">ship date próxima</div></div>':'<div class="stat s-done"><div class="sl">❌ Eliminados</div><div class="sv">'+nGone+'</div><div class="ss">desaparecieron</div></div>')+
-    '<div class="stat" id="stat-nota-card" style="background:#EDE9FE;color:#4C1D95;border-top:3px solid #7C3AED;cursor:pointer" onclick="toggleStatFilter(\'nota\')"><div class="sl">📝 Con nota</div><div class="sv">'+nNota+'</div><div class="ss">sin resolver</div></div>';
+    '<div class="stat" id="stat-nota-card" style="background:#EDE9FE;color:#4C1D95;border-top-color:#7C3AED;cursor:pointer" onclick="toggleStatFilter(\'nota\')"><div class="sl" style="color:#4C1D95">📝 Con nota</div><div class="sv" style="color:#4C1D95;font-size:13px;margin-top:4px">Ver POs</div><div class="ss" style="color:#7C3AED">clic para filtrar</div></div>';
 
   // Division summary - critical POs by division
   var divCrit={};
@@ -696,6 +695,13 @@ function buildTable(){
   applyF();
 }
 
+var STAT_FILTER='';
+function toggleStatFilter(key){
+  STAT_FILTER=STAT_FILTER===key?'':key;
+  var card=document.getElementById('stat-nota-card');
+  if(card) card.style.outline=STAT_FILTER==='nota'?'2px solid #7C3AED':'none';
+  applyF();
+}
 function applyF(){
   var show=document.getElementById('f-show').value;
   var shipF=null; // multi-select handled by SHIP_SELECTED
@@ -803,16 +809,8 @@ function renderTable(){
       html+='<td><span style="'+qStyle+'">'+fN(dd.qty)+'</span></td>';
     }
     var ns=getNoteSummary(r.po);
-    if(ns.active>0){
-      var rcls=(rowClsMap[r.status]||'row-ok')+(exp?' exp-main':'');
-      html=html.replace('class="'+rcls+'"','class="'+rcls+' nota-row-border"');
-    }
-    var notaChip='';
-    if(ns.total>0){
-      var chipCls=ns.active===0?' resolved':'';
-      var chipTxt=ns.active>0?(ns.active+' nota'+(ns.active>1?'s':'')):(ns.resolved+' resuelta'+(ns.resolved>1?'s':''));
-      notaChip='<span class="nota-chip'+chipCls+'" onclick="event.stopPropagation();tog(\''+id+'\')">📝 '+chipTxt+'</span>';
-    }
+    if(ns.active>0){ var rc=(rowClsMap[r.status]||'row-ok')+(exp?' exp-main':''); html=html.replace('class="'+rc+'"','class="'+rc+' nota-row-border"'); }
+    var notaChip=ns.total===0?'':('<span class="nota-chip'+(ns.active===0?' resolved':'')+'" onclick="event.stopPropagation();tog(\''+id+'\')">📝 '+(ns.active>0?(ns.active+' nota'+(ns.active>1?'s':'')):(ns.resolved+' resuelta'+(ns.resolved>1?'s':'')))+'</span>');
     html+='<td class="tc">'+statusBadge(r.status,r.dQ,r.daysOverdue,r.noCar)+'</td>';
     html+='<td style="white-space:nowrap;min-width:80px">'+notaChip+'</td>';
     html+='<td><button class="xbtn" onclick="tog(\''+id+'\')">'+( exp?'▲':'▼')+'</button></td>';
@@ -820,13 +818,8 @@ function renderTable(){
         if(exp) html+=buildDetail(r,cols,id);
   }
   body.innerHTML=html;
-  // Render notes for any expanded rows
   Object.keys(EXPANDED).forEach(function(id){
-    if(EXPANDED[id]){
-      var rowIdx=parseInt(id.slice(1));
-      var row=FILTERED[rowIdx];
-      if(row) renderNotes(row.po);
-    }
+    if(EXPANDED[id]){ var row=FILTERED[parseInt(id.slice(1))]; if(row) renderNotes(row.po); }
   });
   // Footer totals
   var visRows=FILTERED;
@@ -878,7 +871,7 @@ function buildDetail(r,cols){
     tbl+='<td>'+dBadge+'</td></tr>';
   });
   tbl+='</tbody></table>';
-  var noteSec='<div style="margin-top:.75rem;padding-top:.75rem;border-top:1px dashed var(--border)">'    +'<div style="font-size:10px;font-weight:700;color:#4C1D95;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">📝 Notas</div>'    +'<div id="notas-list-'+r.po+'"></div>'    +'<div class="nota-new-wrap">'    +'<textarea id="nota-input-'+r.po+'" placeholder="Nueva nota..." rows="2"></textarea>'    +'<button onclick="addNote(\''+r.po+'\')">+ Agregar</button>'    +'</div>'    +'</div>';
+  var noteSec='<div style="margin-top:.75rem;padding-top:.75rem;border-top:1px dashed var(--border)">'    +'<div style="font-size:10px;font-weight:700;color:#4C1D95;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">📝 Notas</div>'    +'<div id="notas-list-'+r.po+'"></div>'    +'<div class="nota-new-wrap"><textarea id="nota-input-'+r.po+'" placeholder="Nueva nota..." rows="2"></textarea><button onclick="addNote(\''+r.po+'\')">+ Agregar</button></div>'    +'</div>';
   return '<tr class="drow"><td colspan="'+cols+'"><div class="dinner">'+tbl+noteSec+'</div></td></tr>';
 }
 
@@ -976,12 +969,10 @@ function setToday(){
   applyF();
 }
 
-// ── NOTES SYSTEM v2 ──
 function getNotes(po){
   try{
     var v2=localStorage.getItem('notes_v2_'+po);
     if(v2) return JSON.parse(v2)||[];
-    // Check old format
     var old=localStorage.getItem('note_'+po);
     if(old&&old.trim()){
       var now=new Date();
@@ -995,66 +986,28 @@ function getNotes(po){
     return [];
   }catch(e){ return []; }
 }
-function migrateAllNotes(){
-  // Scan localStorage for old note_ keys and migrate all at once
-  try{
-    var keys=[];
-    for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k&&k.indexOf('note_')===0&&k.indexOf('notes_v2_')<0) keys.push(k); }
-    var now=new Date();
-    var days=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
-    var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    var dateLabel=days[now.getDay()]+' '+now.getDate()+' '+months[now.getMonth()];
-    keys.forEach(function(k){
-      var po=k.slice(5); // remove 'note_'
-      var old=localStorage.getItem(k);
-      if(!old||!old.trim()) return;
-      var existing=JSON.parse(localStorage.getItem('notes_v2_'+po)||'[]');
-      if(!existing.length){
-        existing=[{text:old.trim(),date:dateLabel,resolved:false,id:Date.now()}];
-        localStorage.setItem('notes_v2_'+po,JSON.stringify(existing));
-      }
-      localStorage.removeItem(k);
-    });
-  }catch(e){}
-}
 function saveNotes(po,notes){ try{ localStorage.setItem('notes_v2_'+po,JSON.stringify(notes)); }catch(e){} }
-function getNoteSummary(po){
-  var notes=getNotes(po);
-  return {total:notes.length,active:notes.filter(function(n){return !n.resolved;}).length,resolved:notes.filter(function(n){return n.resolved;}).length};
-}
+function getNoteSummary(po){ var n=getNotes(po); return {total:n.length,active:n.filter(function(x){return !x.resolved;}).length,resolved:n.filter(function(x){return x.resolved;}).length}; }
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function addNote(po){
   var ta=document.getElementById('nota-input-'+po);
   if(!ta||!ta.value.trim()) return;
-  var notes=getNotes(po);
-  var now=new Date();
+  var notes=getNotes(po); var now=new Date();
   var days=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
   var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  var h=now.getHours(),m=now.getMinutes(),ap=h>=12?'PM':'AM';
-  h=h%12||12;
+  var h=now.getHours(),m=now.getMinutes(),ap=h>=12?'PM':'AM'; h=h%12||12;
   notes.push({text:ta.value.trim(),date:days[now.getDay()]+' '+now.getDate()+' '+months[now.getMonth()]+' · '+h+':'+(m<10?'0'+m:m)+' '+ap,resolved:false,id:Date.now()});
-  saveNotes(po,notes);
-  ta.value='';
-  renderNotes(po);
-  buildTable(FILTERED,CUR_PAGE);
-  buildNotesAlert();
+  saveNotes(po,notes); ta.value='';
+  buildTable(); buildNotesAlert(); setTimeout(function(){ renderNotes(po); },50);
 }
 function toggleNoteResolved(po,idx){
-  var notes=getNotes(po);
-  if(notes[idx]) notes[idx].resolved=!notes[idx].resolved;
-  saveNotes(po,notes);
-  buildTable();
-  buildNotesAlert();
-  setTimeout(function(){ renderNotes(po); },50);
+  var notes=getNotes(po); if(notes[idx]) notes[idx].resolved=!notes[idx].resolved;
+  saveNotes(po,notes); buildTable(); buildNotesAlert(); setTimeout(function(){ renderNotes(po); },50);
 }
-function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function deleteNote(po,idx){
   if(!confirm('¿Eliminar esta nota?')) return;
-  var notes=getNotes(po);
-  notes.splice(idx,1);
-  saveNotes(po,notes);
-  buildTable();
-  buildNotesAlert();
-  setTimeout(function(){ renderNotes(po); },50);
+  var notes=getNotes(po); notes.splice(idx,1);
+  saveNotes(po,notes); buildTable(); buildNotesAlert(); setTimeout(function(){ renderNotes(po); },50);
 }
 function renderNotes(po){
   var container=document.getElementById('notas-list-'+po);
@@ -1065,34 +1018,17 @@ function renderNotes(po){
     return '<div class="nota-item'+(n.resolved?' resuelta':'')+'">'
       +'<div class="nota-check'+(n.resolved?' checked':'')+'" onclick="toggleNoteResolved(\''+po+'\','+i+')">'+(n.resolved?'✓':'')+'</div>'
       +'<div style="flex:1"><div class="nota-txt">'+escHtml(n.text)+'</div><div class="nota-date">'+n.date+'</div></div>'
-      +'<button onclick="deleteNote(\''+po+'\','+i+')" title="Eliminar nota" style="background:none;border:none;cursor:pointer;color:#c5d5e5;font-size:13px;padding:2px 4px;flex-shrink:0;line-height:1" onmouseover="this.style.color=\'#E24B4A\'" onmouseout="this.style.color=\'#c5d5e5\'">✕</button>'
+      +'<button onclick="deleteNote(\''+po+'\','+i+')" style="background:none;border:none;cursor:pointer;color:#c5d5e5;font-size:13px;padding:2px 4px;flex-shrink:0">✕</button>'
       +'</div>';
   }).join('');
 }
 function buildNotesAlert(){
-  var posWithActive=(_allRows||[]).filter(function(r){ return getNoteSummary(r.po).active>0; }).map(function(r){ return r.po; });
-  var alert=document.getElementById('notas-alert');
-  if(!alert) return;
-  if(!posWithActive.length){ alert.style.display='none'; return; }
-  alert.style.display='flex';
-  document.getElementById('notas-alert-text').innerHTML='<strong>'+posWithActive.length+' PO'+(posWithActive.length>1?'s':'')+' con notas sin resolver:</strong> <span style="font-family:monospace;font-size:10px">'+posWithActive.slice(0,6).join(' · ')+(posWithActive.length>6?' +más':'')+'</span>';
+  var pos=(_allRows||[]).filter(function(r){ return getNoteSummary(r.po).active>0; }).map(function(r){ return r.po; });
+  var al=document.getElementById('notas-alert'); if(!al) return;
+  if(!pos.length){ al.style.display='none'; return; }
+  al.style.display='flex';
+  document.getElementById('notas-alert-text').innerHTML='<strong>'+pos.length+' PO'+(pos.length>1?'s':'')+' con notas pendientes:</strong> <span style="font-family:monospace;font-size:10px">'+pos.slice(0,6).join(' · ')+(pos.length>6?' +más':'')+'</span>';
 }
-
-// ── STAT FILTER ──
-var STAT_FILTER='';
-function toggleStatFilter(key){
-  STAT_FILTER=STAT_FILTER===key?'':key;
-  // Visual active state on stat cards
-  document.querySelectorAll('.stats .stat').forEach(function(el){
-    el.style.outline='';
-  });
-  if(STAT_FILTER){
-    var card=document.getElementById('stat-nota-card');
-    if(key==='nota'&&card) card.style.outline='2px solid #7C3AED';
-  }
-  applyF();
-}
-
 function saveNote(po){
   var el=document.getElementById('note-'+po);
   if(!el) return;
@@ -1103,13 +1039,7 @@ function saveNote(po){
 
 function tog(id){
   EXPANDED[id]=!EXPANDED[id]; renderTable();
-  if(EXPANDED[id]){
-    var rowIdx=parseInt(id.slice(1));
-    var row=FILTERED[rowIdx];
-    if(row){
-      setTimeout(function(){ renderNotes(row.po); },50);
-    }
-  }
+  if(EXPANDED[id]){ var row=FILTERED[parseInt(id.slice(1))]; if(row) setTimeout(function(){ renderNotes(row.po); },50); }
 }
 
 function toggleAll(checked){
