@@ -1042,9 +1042,9 @@ function toggleNoteResolved(po,idx){
   var notes=getNotes(po);
   if(notes[idx]) notes[idx].resolved=!notes[idx].resolved;
   saveNotes(po,notes);
-  renderNotes(po);
-  buildTable(FILTERED,CUR_PAGE);
+  buildTable();
   buildNotesAlert();
+  setTimeout(function(){ renderNotes(po); },50);
 }
 function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function deleteNote(po,idx){
@@ -1052,9 +1052,9 @@ function deleteNote(po,idx){
   var notes=getNotes(po);
   notes.splice(idx,1);
   saveNotes(po,notes);
-  renderNotes(po);
-  buildTable(FILTERED,CUR_PAGE);
+  buildTable();
   buildNotesAlert();
+  setTimeout(function(){ renderNotes(po); },50);
 }
 function renderNotes(po){
   var container=document.getElementById('notas-list-'+po);
