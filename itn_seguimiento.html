@@ -92,11 +92,10 @@ tr.row-gone td{border-left:3px solid #bbb;opacity:.55}
 .det-tbl td{padding:4px 8px;border-bottom:0.5px solid #f0f4f8;text-align:right}
 .det-tbl td.tl{text-align:left}
 .det-tbl tr:last-child td{border-bottom:none}
-/* NOTAS */
 .nota-row-border td:first-child{border-left:3px solid #7C3AED !important}
-.nota-chip{display:inline-flex;align-items:center;gap:3px;background:#EDE9FE;color:#4C1D95;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;border:0.5px solid #C4B5FD;cursor:pointer;white-space:nowrap;margin-left:6px}
+.nota-chip{display:inline-flex;align-items:center;gap:3px;background:#EDE9FE;color:#4C1D95;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;border:0.5px solid #C4B5FD;cursor:pointer;white-space:nowrap;margin-right:4px}
 .nota-chip.resolved{background:#e2f5eb;color:#1a6b3a;border-color:#97C459}
-.nota-alert{background:#F5F3FF;border:1px solid #C4B5FD;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.nota-alert{background:#F5F3FF;border:1px solid #C4B5FD;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:none;align-items:center;gap:10px}
 .nota-alert-text{flex:1;font-size:11px;color:#4C1D95;line-height:1.5}
 .nota-item{background:#F5F3FF;border:0.5px solid #C4B5FD;border-radius:8px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:flex-start;gap:8px}
 .nota-item.resuelta{background:#f0f4f8;border-color:#c8ddf0;opacity:.65}
@@ -167,10 +166,10 @@ tr.row-gone td{border-left:3px solid #bbb;opacity:.55}
 <div class="sbar" id="sbar"></div>
 
 <div id="dash" style="display:none">
-  <div id="notas-alert" class="nota-alert" style="display:none;margin-bottom:10px">
+  <div class="nota-alert" id="notas-alert">
   <span style="font-size:16px">📝</span>
   <div class="nota-alert-text" id="notas-alert-text"></div>
-  <button style="font-size:13px;color:#7C3AED;cursor:pointer;background:none;border:none;padding:2px 6px;border-radius:4px;flex-shrink:0" onclick="this.parentElement.style.display='none'">✕</button>
+  <button style="font-size:13px;color:#7C3AED;cursor:pointer;background:none;border:none;padding:2px 6px;flex-shrink:0" onclick="this.parentElement.style.display='none'">✕</button>
 </div>
 <div class="stats" id="stats"></div>
   <div style="margin-bottom:1rem"><div class="stats" id="stats"></div><div id="div-summary" style="display:none;background:var(--critl);border:1px solid #f09595;border-radius:8px;padding:.5rem 1rem;margin-bottom:.75rem;flex-wrap:wrap;gap:6px;align-items:center"></div>
@@ -639,19 +638,15 @@ function buildTable(){
   var nNoCar=rows.filter(function(r){return r.noCar;}).length;
   var qCrit=rows.filter(function(r){return r.status==='crit';}).reduce(function(s,r){return s+r.lQ;},0);
 
-  // Update nota count
-  var nNota=0;
-  if(_allRows) _allRows.forEach(function(r){ if(getNoteSummary(r.po).active>0) nNota++; });
-  var notaEl=document.getElementById('stat-nota-n');
-  if(notaEl) notaEl.textContent=nNota;
+  var nNota=(_allRows||[]).filter(function(r){ return getNoteSummary(r.po).active>0; }).length;
   document.getElementById('stats').innerHTML=
     '<div class="stat s-crit"><div class="sl">🚨 Críticos</div><div class="sv">'+nCrit+'</div><div class="ss">'+Math.round(qCrit).toLocaleString()+' cajas</div></div>'+
     '<div class="stat s-warn"><div class="sl">⚠️ Cambios</div><div class="sv">'+nChanged+'</div><div class="ss">qty diferente</div></div>'+
     '<div class="stat s-new"><div class="sl">🆕 Nuevos</div><div class="sv">'+nNew+'</div><div class="ss">no estaban antes</div></div>'+
     '<div class="stat s-ok"><div class="sl">✅ Sin cambio</div><div class="sv">'+nSame+'</div><div class="ss">todo igual</div></div>'+
     '<div class="stat s-done"><div class="sl">📦 Entregados</div><div class="sv">'+nDone+'</div><div class="ss">ship date pasó</div></div>'+
-    '<div class="stat" style="background:#EDE9FE;color:#4C1D95;border-top:3px solid #7C3AED" onclick="toggleStatFilter(\'nota\')" id="stat-nota-card"><div class="sl">📝 Con nota</div><div class="sv" id="stat-nota-n">0</div><div class="ss">sin resolver</div></div>'+
-    (nNoCar?'<div class="stat s-crit"><div class="sl">🚚 Sin Carrier</div><div class="sv">'+nNoCar+'</div><div class="ss">ship date próxima</div></div>':'<div class="stat s-done"><div class="sl">❌ Eliminados</div><div class="sv">'+nGone+'</div><div class="ss">desaparecieron</div></div>');
+    (nNoCar?'<div class="stat s-crit"><div class="sl">🚚 Sin Carrier</div><div class="sv">'+nNoCar+'</div><div class="ss">ship date próxima</div></div>':'<div class="stat s-done"><div class="sl">❌ Eliminados</div><div class="sv">'+nGone+'</div><div class="ss">desaparecieron</div></div>')+
+    '<div class="stat" id="stat-nota-card" style="background:#EDE9FE;color:#4C1D95;border-top:3px solid #7C3AED;cursor:pointer" onclick="toggleStatFilter(\'nota\')"><div class="sl">📝 Con nota</div><div class="sv">'+nNota+'</div><div class="ss">sin resolver</div></div>';
 
   // Division summary - critical POs by division
   var divCrit={};
@@ -697,18 +692,6 @@ function buildTable(){
   document.getElementById('thead').innerHTML=th1+th2;
 
   _allRows=rows;
-  applyF();
-}
-
-var STAT_FILTER='';
-function toggleStatFilter(key){
-  if(key==='nota'){
-    STAT_FILTER=STAT_FILTER==='nota'?'':'nota';
-    var card=document.getElementById('stat-nota-card');
-    if(card) card.style.outline=STAT_FILTER==='nota'?'2px solid #7C3AED':'none';
-    applyF(); return;
-  }
-  STAT_FILTER=STAT_FILTER===key?'':key;
   applyF();
 }
 
@@ -819,11 +802,19 @@ function renderTable(){
       html+='<td><span style="'+qStyle+'">'+fN(dd.qty)+'</span></td>';
     }
     var ns=getNoteSummary(r.po);
-    var notaChip=ns.total===0?'<span style="color:#c5d5e5;font-size:10px">—</span>':('<span class="nota-chip'+(ns.active===0?' resolved':'')+'" onclick="event.stopPropagation();tog(\''+(id)+'\')">📝 '+(ns.active>0?(ns.active+' nota'+(ns.active>1?'s':'')):(ns.resolved+' resuelta'+(ns.resolved>1?'s':'')))+'</span>');
-    if(ns.active>0){ var notaCls=(rowClsMap[r.status]||'row-ok')+(exp?' exp-main':''); html=html.replace('class="'+notaCls+'"','class="'+notaCls+' nota-row-border"'); }
+    if(ns.active>0){
+      var rcls=(rowClsMap[r.status]||'row-ok')+(exp?' exp-main':'');
+      html=html.replace('class="'+rcls+'"','class="'+rcls+' nota-row-border"');
+    }
+    var notaChip='';
+    if(ns.total>0){
+      var chipCls=ns.active===0?' resolved':'';
+      var chipTxt=ns.active>0?(ns.active+' nota'+(ns.active>1?'s':'')):(ns.resolved+' resuelta'+(ns.resolved>1?'s':''));
+      notaChip='<span class="nota-chip'+chipCls+'" onclick="event.stopPropagation();tog(\''+id+'\')">📝 '+chipTxt+'</span>';
+    }
     html+='<td class="tc">'+statusBadge(r.status,r.dQ,r.daysOverdue,r.noCar)+'</td>';
-    html+='<td style="white-space:nowrap">'+notaChip+'</td>';
-    html+='<td><button class="xbtn" onclick="tog(\''+(id)+'\')">'+( exp?'▲':'▼')+'</button></td>';
+    html+='<td style="white-space:nowrap;min-width:80px">'+notaChip+'</td>';
+    html+='<td><button class="xbtn" onclick="tog(\''+id+'\')">'+( exp?'▲':'▼')+'</button></td>';
     html+='</tr>';
         if(exp) html+=buildDetail(r,cols,id);
   }
@@ -878,7 +869,7 @@ function buildDetail(r,cols){
     tbl+='<td>'+dBadge+'</td></tr>';
   });
   tbl+='</tbody></table>';
-  var noteSec='<div style="margin-top:.75rem;padding-top:.75rem;border-top:1px dashed var(--border)">'    +'<div style="font-size:10px;font-weight:700;color:#4C1D95;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">📝 Notas</div>'    +'<div id="notas-list-'+r.po+'"></div>'    +'<div class="nota-new-wrap">'    +'<textarea id="nota-input-'+r.po+'" placeholder="Agregar nueva nota..." rows="2"></textarea>'    +'<button onclick="addNote(\''+r.po+'\')">+ Agregar</button>'    +'</div>'    +'</div>';
+  var noteSec='<div style="margin-top:.75rem;padding-top:.75rem;border-top:1px dashed var(--border)">'    +'<div style="font-size:10px;font-weight:700;color:#4C1D95;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">📝 Notas</div>'    +'<div id="notas-list-'+r.po+'"></div>'    +'<div class="nota-new-wrap">'    +'<textarea id="nota-input-'+r.po+'" placeholder="Nueva nota..." rows="2"></textarea>'    +'<button onclick="addNote(\''+r.po+'\')">+ Agregar</button>'    +'</div>'    +'</div>';
   return '<tr class="drow"><td colspan="'+cols+'"><div class="dinner">'+tbl+noteSec+'</div></td></tr>';
 }
 
@@ -976,12 +967,27 @@ function setToday(){
   applyF();
 }
 
-// ── NOTES SYSTEM ──
+// ── NOTES SYSTEM v2 ──
 function getNotes(po){
-  try{ return JSON.parse(localStorage.getItem('notes_v2_'+po)||'[]'); }catch(e){ return []; }
+  try{
+    // Migrate old single note format
+    var old=localStorage.getItem('note_'+po);
+    var existing=JSON.parse(localStorage.getItem('notes_v2_'+po)||'[]');
+    if(old&&old.trim()&&!existing.length){
+      var now=new Date();
+      var days=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+      var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      existing=[{text:old.trim(),date:days[now.getDay()]+' '+now.getDate()+' '+months[now.getMonth()],resolved:false,id:Date.now()}];
+      localStorage.setItem('notes_v2_'+po,JSON.stringify(existing));
+      localStorage.removeItem('note_'+po);
+    }
+    return existing;
+  }catch(e){ return []; }
 }
-function saveNotes(po,notes){
-  try{ localStorage.setItem('notes_v2_'+po, JSON.stringify(notes)); }catch(e){}
+function saveNotes(po,notes){ try{ localStorage.setItem('notes_v2_'+po,JSON.stringify(notes)); }catch(e){} }
+function getNoteSummary(po){
+  var notes=getNotes(po);
+  return {total:notes.length,active:notes.filter(function(n){return !n.resolved;}).length,resolved:notes.filter(function(n){return n.resolved;}).length};
 }
 function addNote(po){
   var ta=document.getElementById('nota-input-'+po);
@@ -992,12 +998,12 @@ function addNote(po){
   var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   var h=now.getHours(),m=now.getMinutes(),ap=h>=12?'PM':'AM';
   h=h%12||12;
-  var label=days[now.getDay()]+' '+now.getDate()+' '+months[now.getMonth()]+' · '+h+':'+(m<10?'0'+m:m)+' '+ap;
-  notes.push({text:ta.value.trim(),date:label,resolved:false,id:Date.now()});
+  notes.push({text:ta.value.trim(),date:days[now.getDay()]+' '+now.getDate()+' '+months[now.getMonth()]+' · '+h+':'+(m<10?'0'+m:m)+' '+ap,resolved:false,id:Date.now()});
   saveNotes(po,notes);
   ta.value='';
   renderNotes(po);
   buildTable(FILTERED,CUR_PAGE);
+  buildNotesAlert();
 }
 function toggleNoteResolved(po,idx){
   var notes=getNotes(po);
@@ -1005,38 +1011,45 @@ function toggleNoteResolved(po,idx){
   saveNotes(po,notes);
   renderNotes(po);
   buildTable(FILTERED,CUR_PAGE);
+  buildNotesAlert();
 }
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function renderNotes(po){
   var container=document.getElementById('notas-list-'+po);
   if(!container) return;
   var notes=getNotes(po);
   if(!notes.length){ container.innerHTML='<div style="font-size:11px;color:#a0b4c8;margin-bottom:8px">Sin notas aún.</div>'; return; }
   container.innerHTML=notes.map(function(n,i){
-    return '<div class="nota-item'+(n.resolved?' resuelta':'')+'" id="ni-'+po+'-'+i+'">'
+    return '<div class="nota-item'+(n.resolved?' resuelta':'')+'">'
       +'<div class="nota-check'+(n.resolved?' checked':'')+'" onclick="toggleNoteResolved(\''+po+'\','+i+')">'+(n.resolved?'✓':'')+'</div>'
       +'<div style="flex:1"><div class="nota-txt">'+escHtml(n.text)+'</div><div class="nota-date">'+n.date+'</div></div>'
       +'</div>';
   }).join('');
 }
-function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function getNoteSummary(po){
-  var notes=getNotes(po);
-  var active=notes.filter(function(n){return !n.resolved;}).length;
-  var resolved=notes.filter(function(n){return n.resolved;}).length;
-  return {total:notes.length,active:active,resolved:resolved};
-}
 function buildNotesAlert(){
-  var posWithActive=[];
-  _allRows.forEach(function(r){
-    var s=getNoteSummary(r.po);
-    if(s.active>0) posWithActive.push(r.po);
-  });
+  var posWithActive=(_allRows||[]).filter(function(r){ return getNoteSummary(r.po).active>0; }).map(function(r){ return r.po; });
   var alert=document.getElementById('notas-alert');
   if(!alert) return;
-  if(posWithActive.length===0){ alert.style.display='none'; return; }
+  if(!posWithActive.length){ alert.style.display='none'; return; }
   alert.style.display='flex';
-  document.getElementById('notas-alert-text').innerHTML='<strong>'+posWithActive.length+' PO'+(posWithActive.length>1?'s':'')+' con notas sin resolver:</strong> <span style="font-family:monospace;font-size:10px">'+posWithActive.join(' · ')+'</span>';
+  document.getElementById('notas-alert-text').innerHTML='<strong>'+posWithActive.length+' PO'+(posWithActive.length>1?'s':'')+' con notas sin resolver:</strong> <span style="font-family:monospace;font-size:10px">'+posWithActive.slice(0,6).join(' · ')+(posWithActive.length>6?' +más':'')+'</span>';
 }
+
+// ── STAT FILTER ──
+var STAT_FILTER='';
+function toggleStatFilter(key){
+  STAT_FILTER=STAT_FILTER===key?'':key;
+  // Visual active state on stat cards
+  document.querySelectorAll('.stats .stat').forEach(function(el){
+    el.style.outline='';
+  });
+  if(STAT_FILTER){
+    var card=document.getElementById('stat-nota-card');
+    if(key==='nota'&&card) card.style.outline='2px solid #7C3AED';
+  }
+  applyF();
+}
+
 function saveNote(po){
   var el=document.getElementById('note-'+po);
   if(!el) return;
@@ -1048,7 +1061,6 @@ function saveNote(po){
 function tog(id){
   EXPANDED[id]=!EXPANDED[id]; renderTable();
   if(EXPANDED[id]){
-    var pageStart=(CUR_PAGE-1)*PAGE_SIZE;
     var rowIdx=parseInt(id.slice(1));
     var row=FILTERED[rowIdx];
     if(row) setTimeout(function(){ renderNotes(row.po); },0);
