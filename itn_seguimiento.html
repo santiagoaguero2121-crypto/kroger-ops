@@ -337,6 +337,7 @@ var SELECTED={};
 (function(){
   try{ var r=localStorage.getItem(HIST_KEY); if(r) HIST_DATA=JSON.parse(r); }catch(e){}
   if(!Array.isArray(HIST_DATA)) HIST_DATA=[];
+  migrateAllNotes();
   if(HIST_DATA.length>0) buildUI();
 })();
 
@@ -819,6 +820,14 @@ function renderTable(){
         if(exp) html+=buildDetail(r,cols,id);
   }
   body.innerHTML=html;
+  // Render notes for any expanded rows
+  Object.keys(EXPANDED).forEach(function(id){
+    if(EXPANDED[id]){
+      var rowIdx=parseInt(id.slice(1));
+      var row=FILTERED[rowIdx];
+      if(row) renderNotes(row.po);
+    }
+  });
   // Footer totals
   var visRows=FILTERED;
   var totalPOs=visRows.length;
@@ -970,19 +979,31 @@ function setToday(){
 // ── NOTES SYSTEM v2 ──
 function getNotes(po){
   try{
-    // Migrate old single note format
-    var old=localStorage.getItem('note_'+po);
     var existing=JSON.parse(localStorage.getItem('notes_v2_'+po)||'[]');
-    if(old&&old.trim()&&!existing.length){
-      var now=new Date();
-      var days=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
-      var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-      existing=[{text:old.trim(),date:days[now.getDay()]+' '+now.getDate()+' '+months[now.getMonth()],resolved:false,id:Date.now()}];
-      localStorage.setItem('notes_v2_'+po,JSON.stringify(existing));
-      localStorage.removeItem('note_'+po);
-    }
     return existing;
   }catch(e){ return []; }
+}
+function migrateAllNotes(){
+  // Scan localStorage for old note_ keys and migrate all at once
+  try{
+    var keys=[];
+    for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k&&k.indexOf('note_')===0&&k.indexOf('notes_v2_')<0) keys.push(k); }
+    var now=new Date();
+    var days=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+    var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    var dateLabel=days[now.getDay()]+' '+now.getDate()+' '+months[now.getMonth()];
+    keys.forEach(function(k){
+      var po=k.slice(5); // remove 'note_'
+      var old=localStorage.getItem(k);
+      if(!old||!old.trim()) return;
+      var existing=JSON.parse(localStorage.getItem('notes_v2_'+po)||'[]');
+      if(!existing.length){
+        existing=[{text:old.trim(),date:dateLabel,resolved:false,id:Date.now()}];
+        localStorage.setItem('notes_v2_'+po,JSON.stringify(existing));
+      }
+      localStorage.removeItem(k);
+    });
+  }catch(e){}
 }
 function saveNotes(po,notes){ try{ localStorage.setItem('notes_v2_'+po,JSON.stringify(notes)); }catch(e){} }
 function getNoteSummary(po){
@@ -1063,7 +1084,9 @@ function tog(id){
   if(EXPANDED[id]){
     var rowIdx=parseInt(id.slice(1));
     var row=FILTERED[rowIdx];
-    if(row) setTimeout(function(){ renderNotes(row.po); },0);
+    if(row){
+      setTimeout(function(){ renderNotes(row.po); },50);
+    }
   }
 }
 
