@@ -639,7 +639,7 @@ function buildTable(){
   var nNoCar=rows.filter(function(r){return r.noCar;}).length;
   var qCrit=rows.filter(function(r){return r.status==='crit';}).reduce(function(s,r){return s+r.lQ;},0);
 
-  var nNota=(_allRows||[]).filter(function(r){ return getNoteSummary(r.po).active>0; }).length;
+  var nNota=0; try{ for(var _i=0;_i<localStorage.length;_i++){ var _k=localStorage.key(_i); if(_k&&(_k.indexOf('notes_v2_')===0)){ var _n=JSON.parse(localStorage.getItem(_k)||'[]'); if(_n.some(function(x){return !x.resolved;})) nNota++; } else if(_k&&_k.indexOf('note_')===0&&_k.indexOf('notes_v2_')<0){ var _v=localStorage.getItem(_k); if(_v&&_v.trim()) nNota++; } } }catch(_e){}
   document.getElementById('stats').innerHTML=
     '<div class="stat s-crit"><div class="sl">🚨 Críticos</div><div class="sv">'+nCrit+'</div><div class="ss">'+Math.round(qCrit).toLocaleString()+' cajas</div></div>'+
     '<div class="stat s-warn"><div class="sl">⚠️ Cambios</div><div class="sv">'+nChanged+'</div><div class="ss">qty diferente</div></div>'+
@@ -979,8 +979,20 @@ function setToday(){
 // ── NOTES SYSTEM v2 ──
 function getNotes(po){
   try{
-    var existing=JSON.parse(localStorage.getItem('notes_v2_'+po)||'[]');
-    return existing;
+    var v2=localStorage.getItem('notes_v2_'+po);
+    if(v2) return JSON.parse(v2)||[];
+    // Check old format
+    var old=localStorage.getItem('note_'+po);
+    if(old&&old.trim()){
+      var now=new Date();
+      var days=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+      var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      var migrated=[{text:old.trim(),date:days[now.getDay()]+' '+now.getDate()+' '+months[now.getMonth()],resolved:false,id:Date.now()}];
+      localStorage.setItem('notes_v2_'+po,JSON.stringify(migrated));
+      localStorage.removeItem('note_'+po);
+      return migrated;
+    }
+    return [];
   }catch(e){ return []; }
 }
 function migrateAllNotes(){
@@ -1035,6 +1047,15 @@ function toggleNoteResolved(po,idx){
   buildNotesAlert();
 }
 function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function deleteNote(po,idx){
+  if(!confirm('¿Eliminar esta nota?')) return;
+  var notes=getNotes(po);
+  notes.splice(idx,1);
+  saveNotes(po,notes);
+  renderNotes(po);
+  buildTable(FILTERED,CUR_PAGE);
+  buildNotesAlert();
+}
 function renderNotes(po){
   var container=document.getElementById('notas-list-'+po);
   if(!container) return;
@@ -1044,6 +1065,7 @@ function renderNotes(po){
     return '<div class="nota-item'+(n.resolved?' resuelta':'')+'">'
       +'<div class="nota-check'+(n.resolved?' checked':'')+'" onclick="toggleNoteResolved(\''+po+'\','+i+')">'+(n.resolved?'✓':'')+'</div>'
       +'<div style="flex:1"><div class="nota-txt">'+escHtml(n.text)+'</div><div class="nota-date">'+n.date+'</div></div>'
+      +'<button onclick="deleteNote(\''+po+'\','+i+')" title="Eliminar nota" style="background:none;border:none;cursor:pointer;color:#c5d5e5;font-size:13px;padding:2px 4px;flex-shrink:0;line-height:1" onmouseover="this.style.color=\'#E24B4A\'" onmouseout="this.style.color=\'#c5d5e5\'">✕</button>'
       +'</div>';
   }).join('');
 }
