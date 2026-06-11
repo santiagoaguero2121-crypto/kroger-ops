@@ -640,12 +640,12 @@ function buildTable(){
   var qCrit=rows.filter(function(r){return r.status==='crit';}).reduce(function(s,r){return s+r.lQ;},0);
 
   document.getElementById('stats').innerHTML=
-    '<div class="stat s-crit"><div class="sl">🚨 Críticos</div><div class="sv">'+nCrit+'</div><div class="ss">'+Math.round(qCrit).toLocaleString()+' cajas</div></div>'+
-    '<div class="stat s-warn"><div class="sl">⚠️ Cambios</div><div class="sv">'+nChanged+'</div><div class="ss">qty diferente</div></div>'+
-    '<div class="stat s-new"><div class="sl">🆕 Nuevos</div><div class="sv">'+nNew+'</div><div class="ss">no estaban antes</div></div>'+
-    '<div class="stat s-ok"><div class="sl">✅ Sin cambio</div><div class="sv">'+nSame+'</div><div class="ss">todo igual</div></div>'+
-    '<div class="stat s-done"><div class="sl">📦 Entregados</div><div class="sv">'+nDone+'</div><div class="ss">ship date pasó</div></div>'+
-    (nNoCar?'<div class="stat s-crit"><div class="sl">🚚 Sin Carrier</div><div class="sv">'+nNoCar+'</div><div class="ss">ship date próxima</div></div>':'<div class="stat s-done"><div class="sl">❌ Eliminados</div><div class="sv">'+nGone+'</div><div class="ss">desaparecieron</div></div>')+
+    '<div class="stat s-crit" onclick="toggleStatFilter(\'crit\')" style="cursor:pointer"><div class="sl">🚨 Críticos</div><div class="sv">'+nCrit+'</div><div class="ss">'+Math.round(qCrit).toLocaleString()+' cajas</div></div>'+
+    '<div class="stat s-warn" onclick="toggleStatFilter(\'changed\')" style="cursor:pointer"><div class="sl">⚠️ Cambios</div><div class="sv">'+nChanged+'</div><div class="ss">qty diferente</div></div>'+
+    '<div class="stat s-new" onclick="toggleStatFilter(\'new\')" style="cursor:pointer"><div class="sl">🆕 Nuevos</div><div class="sv">'+nNew+'</div><div class="ss">no estaban antes</div></div>'+
+    '<div class="stat s-ok" onclick="toggleStatFilter(\'same\')" style="cursor:pointer"><div class="sl">✅ Sin cambio</div><div class="sv">'+nSame+'</div><div class="ss">todo igual</div></div>'+
+    '<div class="stat s-done" onclick="toggleStatFilter(\'done\')" style="cursor:pointer"><div class="sl">📦 Entregados</div><div class="sv">'+nDone+'</div><div class="ss">ship date pasó</div></div>'+
+    (nNoCar?'<div class="stat s-crit" onclick="toggleStatFilter(\'nocar\')" style="cursor:pointer"><div class="sl">🚚 Sin Carrier</div><div class="sv">'+nNoCar+'</div><div class="ss">ship date próxima</div></div>':'<div class="stat s-done" onclick="toggleStatFilter(\'gone\')" style="cursor:pointer"><div class="sl">❌ Eliminados</div><div class="sv">'+nGone+'</div><div class="ss">desaparecieron</div></div>')+
     '<div class="stat" id="stat-nota-card" style="background:#EDE9FE;color:#4C1D95;border-top-color:#7C3AED;cursor:pointer" onclick="toggleStatFilter(\'nota\')"><div class="sl" style="color:#4C1D95">📝 Con nota</div><div class="sv" style="color:#4C1D95;font-size:13px;margin-top:4px">Ver POs</div><div class="ss" style="color:#7C3AED">clic para filtrar</div></div>';
 
   // Division summary - critical POs by division
@@ -698,8 +698,6 @@ function buildTable(){
 var STAT_FILTER='';
 function toggleStatFilter(key){
   STAT_FILTER=STAT_FILTER===key?'':key;
-  var card=document.getElementById('stat-nota-card');
-  if(card) card.style.outline=STAT_FILTER==='nota'?'2px solid #7C3AED':'none';
   applyF();
 }
 function applyF(){
@@ -711,6 +709,8 @@ function applyF(){
   var poF=document.getElementById('f-po').value.toLowerCase();
   FILTERED=_allRows.filter(function(r){
     if(STAT_FILTER==='nota'&&getNoteSummary(r.po).active===0) return false;
+    if(STAT_FILTER==='nocar'&&!r.noCar) return false;
+    if(STAT_FILTER&&STAT_FILTER!=='nota'&&STAT_FILTER!=='nocar'&&r.status!==STAT_FILTER) return false;
     if(show&&r.status!==show) return false;
     if(SHIP_SELECTED.size>0&&!SHIP_SELECTED.has(r.ship)) return false;
     if(regF&&divRegion(r.div)!==regF) return false;
