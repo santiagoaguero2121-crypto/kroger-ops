@@ -1323,3 +1323,147 @@ function selectShipDay(elOrShip){
       +'</div>'
       +'</div>';
 
+  });
+  document.getElementById('res-regions').innerHTML=regHtml;
+  if(firstReg) selectRegion(firstReg, ship);
+}
+
+function selectRegion(reg, ship){
+  if(typeof reg==='object'&&reg&&reg.dataset){ship=reg.dataset.ship;reg=reg.dataset.reg;}
+  var el=document.getElementById('resumen-view');
+  if(!el||!el._regions) return;
+  var regions=el._regions;
+  if(!regions[reg]||!regions[reg][ship]) return;
+  var days2=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+  document.querySelectorAll('[id^="regcard-"]').forEach(function(c){c.style.background='var(--color-background-primary)';c.style.borderColor='';});
+  var rc=document.getElementById('regcard-'+reg);
+  if(rc){rc.style.background='#E6F1FB';rc.style.borderColor='#185FA5';}
+  var rs=regions[reg][ship];
+  var dayName=''; try{var dd=new Date(toISO(ship)+'T12:00:00');dayName=days2[dd.getDay()];}catch(e){}
+  var allPos=[]; Object.values(rs.divs).forEach(function(d){allPos=allPos.concat(d.pos);});
+  var html='<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden">'
+    +'<div style="padding:.875rem 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:8px;background:var(--color-background-secondary)">'
+    +'<span style="font-size:13px;font-weight:500;color:var(--color-text-primary);flex:1">'+reg+' \xb7 '+ship+' ('+dayName+')</span>'
+    +'<span style="font-size:11px;color:var(--color-text-secondary)">'+allPos.length+' POs \xb7 '+rs.qty.toLocaleString()+' cajas</span>'
+    +'</div>';
+  var uid=0;
+  Object.keys(rs.divs).sort().forEach(function(div){
+    var dd=rs.divs[div];
+    var delta=dd.qty-dd.prevQty;
+    var nC=dd.pos.filter(function(p){return p.status==='gone';}).length;
+    var nW=dd.pos.filter(function(p){return p.status==='changed';}).length;
+    var nA=dd.pos.filter(function(p){return p.status==='new';}).length;
+    var did='rdiv'+(uid++);
+    var deltaStr=delta===0?'\u2014':(delta>0?'\u25b2 +':'\u25bc ')+Math.abs(delta).toLocaleString();
+    var deltaCol=delta<0?'#A32D2D':delta>0?'#27500A':'var(--color-text-tertiary)';
+    var statusPill=nC?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#FCEBEB;color:#791F1F;font-weight:500">'+nC+' cancel</span>'
+      :nW?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#FAEEDA;color:#633806;font-weight:500">'+nW+' cambios</span>'
+      :'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#EAF3DE;color:#27500A;font-weight:500">ok</span>';
+    html+='<div style="border-bottom:0.5px solid var(--color-border-tertiary)">'
+      +'<div style="display:flex;align-items:center;gap:10px;padding:.75rem 1.25rem;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleResDiv(this)" data-did="'+did+'">'
+      +'<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:#E6F1FB;color:#0C447C;font-weight:500;min-width:100px;text-align:center">'+div+'</span>'
+      +'<span style="font-size:11px;color:var(--color-text-secondary)"><strong style="color:var(--color-text-primary)">'+dd.pos.length+'</strong> POs \xb7 <strong style="color:var(--color-text-primary)">'+dd.qty.toLocaleString()+'</strong> cajas</span>'
+      +'<span style="font-size:11px;font-weight:500;color:'+deltaCol+'">'+deltaStr+'</span>'
+      +'<span style="margin-left:auto">'+statusPill+'</span>'
+      +'<i class="ti ti-chevron-down" id="arrrd'+did+'" style="font-size:13px;color:var(--color-text-tertiary);margin-left:8px;transition:transform .2s" aria-hidden="true"></i>'
+      +'</div>'
+      +'<div id="'+did+'" style="display:none;background:var(--color-background-primary)">'
+      +'<table style="width:100%;border-collapse:collapse">'
+      +'<thead><tr>'
+      +'<th style="font-size:10px;color:var(--color-text-secondary);font-weight:500;padding:5px 1.25rem;text-align:left;border-bottom:0.5px solid var(--color-border-tertiary)">PO</th>'
+      +'<th style="font-size:10px;color:var(--color-text-secondary);font-weight:500;padding:5px 1.25rem;text-align:right;border-bottom:0.5px solid var(--color-border-tertiary)">Ayer</th>'
+      +'<th style="font-size:10px;color:var(--color-text-secondary);font-weight:500;padding:5px 1.25rem;text-align:right;border-bottom:0.5px solid var(--color-border-tertiary)">Hoy</th>'
+      +'<th style="font-size:10px;color:var(--color-text-secondary);font-weight:500;padding:5px 1.25rem;text-align:right;border-bottom:0.5px solid var(--color-border-tertiary)">\u0394</th>'
+      +'<th style="font-size:10px;color:var(--color-text-secondary);font-weight:500;padding:5px 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary)">Estado</th>'
+      +'</tr></thead><tbody>';
+    var totAyer=0,totHoy=0;
+    dd.pos.forEach(function(p){
+      totAyer+=p.prevQty; totHoy+=p.qty;
+      var dq=p.qty-p.prevQty;
+      var dqStr=dq===0?'<span style="color:var(--color-text-tertiary)">\u2014</span>'
+        :(dq>0?'<span style="color:#27500A;font-weight:500">\u25b2 +'+dq+'</span>'
+        :'<span style="color:#A32D2D;font-weight:500">\u25bc '+dq+'</span>');
+      var rowBg=p.status==='gone'?'#FEF5F5':p.status==='new'?'#F5FBF0':p.status==='changed'?'#FFFBF0':'';
+      var sb=p.status==='gone'?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#FCEBEB;color:#791F1F;font-weight:500">cancel</span>'
+        :p.status==='new'?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#EAF3DE;color:#27500A;font-weight:500">add</span>'
+        :p.status==='changed'?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#FAEEDA;color:#633806;font-weight:500">cambio</span>'
+        :'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#EAF3DE;color:#27500A;font-weight:500">ok</span>';
+      html+='<tr style="background:'+rowBg+';border-bottom:0.5px solid var(--color-border-tertiary)">'
+        +'<td style="padding:5px 1.25rem;font-size:11px;font-family:var(--font-mono);font-weight:500;color:var(--color-text-primary)">'+p.po+'</td>'
+        +'<td style="padding:5px 1.25rem;font-size:11px;font-family:var(--font-mono);text-align:right">'+p.prevQty+'</td>'
+        +'<td style="padding:5px 1.25rem;font-size:11px;font-family:var(--font-mono);text-align:right">'+p.qty+'</td>'
+        +'<td style="padding:5px 1.25rem;font-size:11px;text-align:right">'+dqStr+'</td>'
+        +'<td style="padding:5px 1.25rem">'+sb+'</td>'
+        +'</tr>';
+    });
+    var totDelta=totHoy-totAyer;
+    html+='<tr style="background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary)">'
+      +'<td style="padding:5px 1.25rem;font-size:11px;font-weight:500;color:var(--color-text-primary)">Total</td>'
+      +'<td style="padding:5px 1.25rem;font-size:11px;font-family:var(--font-mono);text-align:right;font-weight:500">'+totAyer.toLocaleString()+'</td>'
+      +'<td style="padding:5px 1.25rem;font-size:11px;font-family:var(--font-mono);text-align:right;font-weight:500">'+totHoy.toLocaleString()+'</td>'
+      +'<td style="padding:5px 1.25rem;font-size:11px;text-align:right;font-weight:500;color:'+(totDelta<0?'#A32D2D':totDelta>0?'#27500A':'var(--color-text-tertiary)')+'">'+( totDelta===0?'\u2014':(totDelta>0?'\u25b2 +':'\u25bc ')+Math.abs(totDelta).toLocaleString())+'</td>'
+      +'<td></td></tr>';
+    html+='</tbody></table></div></div>';
+  });
+  html+='</div>';
+  document.getElementById('res-detail').innerHTML=html;
+}
+
+function toggleResDiv(idOrEl){
+  var id=typeof idOrEl==='string'?idOrEl:(idOrEl.dataset?idOrEl.dataset.did:idOrEl);
+  var b=document.getElementById(id);
+  var a=document.getElementById('arrrd'+id);
+  if(!b) return;
+  var h=b.style.display==='none';
+  b.style.display=h?'block':'none';
+  if(a) a.style.transform=h?'rotate(180deg)':'';
+}
+
+function filterResumen(){
+  var el=document.getElementById('resumen-view');
+  if(!el||!el._allShips) return;
+  var fromV=(document.getElementById('res-from')||{value:''}).value||'';
+  var toV=(document.getElementById('res-to')||{value:''}).value||'';
+  var filtered=el._allShips.filter(function(s){
+    var iso=toISO(s);
+    if(fromV&&iso<fromV) return false;
+    if(toV&&iso>toV) return false;
+    return true;
+  });
+  if(!filtered.length) filtered=el._allShips;
+  var strip=document.getElementById('res-week-strip');
+  if(!strip) return;
+  var shipDates=el._shipDates;
+  var days2=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+  strip.style.gridTemplateColumns='repeat('+Math.min(filtered.length,7)+',1fr)';
+  strip.innerHTML='';
+  filtered.slice(0,7).forEach(function(ship){
+    var sd=shipDates[ship];
+    var borderTop=sd.crit>0?'#E24B4A':sd.chg>0?'#EF9F27':'#639922';
+    var alertTxt=sd.crit>0?(sd.crit+' cr\xedticos'):sd.chg>0?(sd.chg+' cambios'):'todo OK';
+    var alertCol=sd.crit>0?'#A32D2D':sd.chg>0?'#633806':'#27500A';
+    var dayName=''; try{var dd=new Date(toISO(ship)+'T12:00:00');dayName=days2[dd.getDay()];}catch(e){}
+    var div=document.createElement('div');
+    div.id='daycard-'+ship.replace(/\//g,'-');
+    div.dataset.ship=ship;
+    div.style.cssText='background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-top:3px solid '+borderTop+';border-radius:var(--border-radius-md);padding:10px 8px;cursor:pointer;text-align:center';
+    div.onclick=function(){selectShipDay(this.dataset.ship);};
+    div.innerHTML='<div style="font-size:10px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+dayName+'</div>'
+      +'<div style="font-size:11px;font-weight:500;color:var(--color-text-primary);margin-bottom:6px">'+ship+'</div>'
+      +'<div style="font-size:16px;font-weight:500;font-family:var(--font-mono);color:var(--color-text-primary);line-height:1;margin-bottom:3px">'+sd.pos+'</div>'
+      +'<div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:4px">POs</div>'
+      +'<div style="font-size:9px;font-weight:500;color:'+alertCol+'">'+alertTxt+'</div>';
+    strip.appendChild(div);
+  });
+  if(filtered.length) selectShipDay(filtered[0]);
+}
+
+function clearResumenFilter(){
+  var ff=document.getElementById('res-from'); if(ff) ff.value='';
+  var ft=document.getElementById('res-to'); if(ft) ft.value='';
+  filterResumen();
+}
+
+</script>
+</body>
+</html>
