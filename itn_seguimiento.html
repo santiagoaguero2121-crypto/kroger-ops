@@ -887,9 +887,10 @@ function buildDetail(r,cols){
   keys.forEach(function(k){
     var p=r.prods[k];
     // Get qty per day
-    var dayQtys=HIST_DATA.map(function(d){ return d.pos[r.po]&&d.pos[r.po].prods&&d.pos[r.po].prods[k]?Math.round(d.pos[r.po].prods[k].qty):null; });
-    var lastQ=null,prevQ=null;
-    for(var i=dayQtys.length-1;i>=0;i--){ if(dayQtys[i]!==null){lastQ=dayQtys[i];break;} }
+    var dayQtys=HIST_DATA.map(function(d){ var dp=d.pos[r.po]; return (dp&&dp.prods&&dp.prods.hasOwnProperty(k))?Math.round(dp.prods[k].qty):null; });
+    // lastQ = exact value on the last loaded day (null if SKU absent that day)
+    var lastQ=dayQtys.length?dayQtys[dayQtys.length-1]:null;
+    var prevQ=null;
     for(var i=dayQtys.length-2;i>=0;i--){ if(dayQtys[i]!==null){prevQ=dayQtys[i];break;} }
     var diff=(lastQ!==null&&prevQ!==null)?lastQ-prevQ:null;
     var isSkuNew=lastQ!==null&&prevQ===null;
