@@ -209,15 +209,14 @@ tr.row-gone td{border-left:3px solid #bbb;opacity:.55}
   </div>
   <div id="resumen-view" style="display:none"></div>
   <div id="po-view">
-  <div class="nota-alert" id="notas-alert">
-  <span style="font-size:16px">📝</span>
-  <div class="nota-alert-text" id="notas-alert-text"></div>
-  <button style="font-size:13px;color:#7C3AED;cursor:pointer;background:none;border:none;padding:2px 6px;flex-shrink:0" onclick="this.parentElement.style.display='none'">✕</button>
-</div>
-<div class="stats" id="stats"></div>
-  <div style="margin-bottom:1rem"><div class="stats" id="stats"></div><div id="div-summary" style="display:none;background:var(--critl);border:1px solid #f09595;border-radius:8px;padding:.5rem 1rem;margin-bottom:.75rem;flex-wrap:wrap;gap:6px;align-items:center"></div>
-
-  </div></div></div></div>
+    <div class="nota-alert" id="notas-alert">
+      <span style="font-size:16px">📝</span>
+      <div class="nota-alert-text" id="notas-alert-text"></div>
+      <button style="font-size:13px;color:#7C3AED;cursor:pointer;background:none;border:none;padding:2px 6px;flex-shrink:0" onclick="this.parentElement.style.display='none'">✕</button>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div style="margin-bottom:1rem"><div id="div-summary" style="display:none;background:var(--critl);border:1px solid #f09595;border-radius:8px;padding:.5rem 1rem;margin-bottom:.75rem;flex-wrap:wrap;gap:6px;align-items:center"></div>
+    </div>
   <div class="days-bar" id="days-bar">
     <span class="ds-title">Días en historial:</span>
   </div>
@@ -1142,178 +1141,263 @@ function setView(v){
   CURRENT_VIEW=v;
   document.getElementById('vbtn-po').className='vbtn '+(v==='po'?'active':'inactive');
   document.getElementById('vbtn-resumen').className='vbtn '+(v==='resumen'?'active':'inactive');
-  document.getElementById('po-view').style.display=v==='po'?'':'none';
-  document.getElementById('resumen-view').style.display=v==='resumen'?'':'none';
+  // Hide/show po-view
+  var pv=document.getElementById('po-view');
+  if(pv) pv.style.display=v==='po'?'block':'none';
+  // Hide/show resumen-view
+  var rv=document.getElementById('resumen-view');
+  if(rv) rv.style.display=v==='resumen'?'block':'none';
+  // Hide notas-alert and stats when in resumen
+  var na=document.getElementById('notas-alert');
+  if(na) na.style.display=v==='resumen'?'none':(na._wasVisible?'flex':'none');
   if(v==='resumen') buildResumen();
 }
 
 function buildResumen(){
   var el=document.getElementById('resumen-view');
   if(!_allRows||!_allRows.length){
-    el.innerHTML='<div style="padding:2rem;text-align:center;color:var(--muted)">Carga un archivo ITN para ver el resumen.</div>';
+    el.innerHTML='<div style="padding:2rem;text-align:center;color:var(--color-text-secondary)">Carga un archivo ITN para ver el resumen.</div>';
     return;
   }
-  var totalPOs=_allRows.length;
-  var totalQty=0,prevQty=0;
-  _allRows.forEach(function(r){
-    var ld=r.days[r.days.length-1],pd=null;
-    for(var i=r.days.length-2;i>=0;i--){if(r.days[i]){pd=r.days[i];break;}}
-    if(ld) totalQty+=Math.round(ld.qty);
-    if(pd) prevQty+=Math.round(pd.qty);
-  });
-  var dQty=totalQty-prevQty;
-  var nChg=_allRows.filter(function(r){return r.status==='changed'||r.status==='new'||r.status==='gone';}).length;
-  var nCrit=_allRows.filter(function(r){return r.status==='crit';}).length;
 
-  // Build hierarchy: region -> ship -> division -> POs
-  var regions={};
+  var activeRows=_allRows.filter(function(r){return r.status!=='done';});
+  var days2=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
   var regIcons={West:'🌊',Mountain:'⛰️',South:'☀️',NFC:'🏪'};
   var regOrder=['West','Mountain','South','NFC'];
-  var days2=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
 
-  _allRows.forEach(function(r){
+  // Build ship-date based index for week strip
+  var shipDates={};
+  activeRows.forEach(function(r){
+    var ship=r.ship||'Sin fecha';
+    if(!shipDates[ship]) shipDates[ship]={qty:0,prevQty:0,pos:0,chg:0,crit:0};
+    var ld=r.days[r.days.length-1],pd=null;
+    for(var i=r.days.length-2;i>=0;i--){if(r.days[i]){pd=r.days[i];break;}}
+    var qty=ld?Math.round(ld.qty):0,pqty=pd?Math.round(pd.qty):0;
+    shipDates[ship].qty+=qty; shipDates[ship].prevQty+=pqty;
+    shipDates[ship].pos++;
+    if(r.status==='changed'||r.status==='new'||r.status==='gone') shipDates[ship].chg++;
+    if(r.status==='crit') shipDates[ship].crit++;
+  });
+
+  // Build region->ship->division->POs index
+  var regions={};
+  activeRows.forEach(function(r){
     var reg=divRegion(r.div)||'Otra';
     var ship=r.ship||'Sin fecha';
     var div=r.div||'Sin división';
-    if(!regions[reg]) regions[reg]={qty:0,prevQty:0,ships:{}};
-    if(!regions[reg].ships[ship]) regions[reg].ships[ship]={qty:0,prevQty:0,divs:{}};
-    if(!regions[reg].ships[ship].divs[div]) regions[reg].ships[ship].divs[div]={qty:0,prevQty:0,pos:[]};
+    if(!regions[reg]) regions[reg]={};
+    if(!regions[reg][ship]) regions[reg][ship]={qty:0,prevQty:0,divs:{}};
+    if(!regions[reg][ship].divs[div]) regions[reg][ship].divs[div]={qty:0,prevQty:0,pos:[]};
     var ld=r.days[r.days.length-1],pd=null;
     for(var i=r.days.length-2;i>=0;i--){if(r.days[i]){pd=r.days[i];break;}}
-    var qty=ld?Math.round(ld.qty):0;
-    var pqty=pd?Math.round(pd.qty):0;
-    regions[reg].qty+=qty; regions[reg].prevQty+=pqty;
-    regions[reg].ships[ship].qty+=qty; regions[reg].ships[ship].prevQty+=pqty;
-    regions[reg].ships[ship].divs[div].qty+=qty; regions[reg].ships[ship].divs[div].prevQty+=pqty;
-    regions[reg].ships[ship].divs[div].pos.push({po:r.po,carrier:r.carrier||'',qty:qty,prevQty:pqty,status:r.status,dq:r.dQ||0});
+    var qty=ld?Math.round(ld.qty):0,pqty=pd?Math.round(pd.qty):0;
+    regions[reg][ship].qty+=qty; regions[reg][ship].prevQty+=pqty;
+    regions[reg][ship].divs[div].qty+=qty; regions[reg][ship].divs[div].prevQty+=pqty;
+    regions[reg][ship].divs[div].pos.push({po:r.po,carrier:r.carrier||'',qty:qty,prevQty:pqty,status:r.status,dq:r.dQ||0});
   });
 
-  function mkPills(pos){
-    var nC=pos.filter(function(p){return p.status==='gone'||p.status==='changed'&&p.dq<0;}).length;
-    var nA=pos.filter(function(p){return p.status==='new';}).length;
-    var nW=pos.filter(function(p){return p.status==='changed'&&p.dq>0;}).length;
-    var s='';
-    if(nC) s+='<span class="rpill rp-cancel">'+nC+' CANCEL</span>';
-    if(nA) s+='<span class="rpill rp-add">'+nA+' ADD</span>';
-    if(nW) s+='<span class="rpill rp-warn">'+nW+' cambios</span>';
-    if(!nC&&!nA&&!nW) s='<span class="rpill rp-ok">✅ OK</span>';
-    return s;
-  }
+  // Week strip HTML
+  var sortedShips=Object.keys(shipDates).filter(function(s){return s!=='Sin fecha';}).sort();
+  var weekHtml='<div style="display:grid;grid-template-columns:repeat('+Math.min(sortedShips.length,7)+',1fr);gap:6px;margin-bottom:1rem">';
+  sortedShips.slice(0,7).forEach(function(ship,si){
+    var sd=shipDates[ship];
+    var delta=sd.qty-sd.prevQty;
+    var borderTop=sd.crit>0?'#E24B4A':sd.chg>0?'#EF9F27':'#639922';
+    var alertTxt=sd.crit>0?(sd.crit+' críticos'):sd.chg>0?(sd.chg+' cambios'):'todo OK';
+    var alertCol=sd.crit>0?'#A32D2D':sd.chg>0?'#633806':'#27500A';
+    var dayName=''; try{var dd=new Date(toISO(ship)+'T12:00:00');dayName=days2[dd.getDay()];}catch(e){}
+    var isFirst=si===0;
+    weekHtml+='<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-top:3px solid '+borderTop+';border-radius:var(--border-radius-md);padding:10px 8px;cursor:pointer;text-align:center" '
+      +'onclick="selectShipDay(this.dataset.ship)" data-ship="'+ship+'" id="daycard-'+ship.replace(/\//g,'-')+'">'
+      +'<div style="font-size:10px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+dayName+'</div>'
+      +'<div style="font-size:11px;font-weight:500;color:var(--color-text-primary);margin-bottom:6px">'+ship+'</div>'
+      +'<div style="font-size:16px;font-weight:500;font-family:var(--font-mono);color:var(--color-text-primary);line-height:1;margin-bottom:3px">'+sd.qty.toLocaleString()+'</div>'
+      +'<div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:4px">'+sd.pos+' POs</div>'
+      +'<div style="font-size:9px;font-weight:500;color:'+alertCol+'">'+alertTxt+'</div>'
+      +'</div>';
+  });
+  weekHtml+='</div>';
 
-  var uid=0;
-  var html='<div class="kpis">'
-    +'<div class="kpi kpi-blue"><div class="kpi-val">'+totalPOs+'</div><div class="kpi-lbl">POs totales</div><div class="kpi-sub kneutral">'+HIST_DATA.length+' días en historial</div></div>'
-    +'<div class="kpi kpi-blue"><div class="kpi-val">'+totalQty.toLocaleString()+'</div><div class="kpi-lbl">Cajas hoy</div><div class="kpi-sub '+(dQty<0?'kdown':dQty>0?'kup':'kneutral')+'">'+(dQty>0?'▲ +':dQty<0?'▼ ':'')+Math.abs(dQty).toLocaleString()+' vs ayer</div></div>'
-    +'<div class="kpi kpi-red"><div class="kpi-val">'+nChg+'</div><div class="kpi-lbl">Con cambios</div><div class="kpi-sub kneutral">vs día anterior</div></div>'
-    +'<div class="kpi kpi-orange"><div class="kpi-val">'+nCrit+'</div><div class="kpi-lbl">Críticos</div><div class="kpi-sub kneutral">ship date vencida</div></div>'
+  // Summary bar + regions + detail placeholder
+  weekHtml+='<div id="res-summary-bar" style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.5rem;margin-bottom:1rem;display:flex;align-items:center;gap:2rem">'
+    +'<div style="flex:1"><div style="font-size:11px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px" id="res-day-label">Selecciona un día</div>'
+    +'<div style="font-size:28px;font-weight:500;font-family:var(--font-mono);color:var(--color-text-primary);line-height:1" id="res-total-qty">—</div>'
+    +'<div style="font-size:12px;color:var(--color-text-secondary);margin-top:4px" id="res-total-sub">cajas activas</div></div>'
+    +'<div style="display:flex;gap:1.5rem">'
+    +'<div style="text-align:center"><div style="font-size:18px;font-weight:500;font-family:var(--font-mono);color:#A32D2D" id="res-crit">—</div><div style="font-size:10px;color:var(--color-text-secondary)">críticos</div></div>'
+    +'<div style="text-align:center"><div style="font-size:18px;font-weight:500;font-family:var(--font-mono);color:#633806" id="res-chg">—</div><div style="font-size:10px;color:var(--color-text-secondary)">cambios</div></div>'
+    +'<div style="text-align:center"><div style="font-size:18px;font-weight:500;font-family:var(--font-mono);color:var(--color-text-primary)" id="res-ok">—</div><div style="font-size:10px;color:var(--color-text-secondary)">sin cambio</div></div>'
+    +'</div></div>';
+
+  weekHtml+='<div id="res-regions" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem"></div>';
+  weekHtml+='<div id="res-detail"></div>';
+
+  el.innerHTML=weekHtml;
+
+  // Store data for JS access
+  el._regions=regions;
+  el._shipDates=shipDates;
+
+  // Auto-select first ship date
+  if(sortedShips.length) selectShipDay(sortedShips[0]);
+}
+
+function selectShipDay(elOrShip){
+  var ship=typeof elOrShip==='string'?elOrShip:(elOrShip.dataset?elOrShip.dataset.ship:elOrShip);
+  var el=document.getElementById('resumen-view');
+  if(!el||!el._regions) return;
+  var regions=el._regions;
+  var sd=el._shipDates[ship];
+  if(!sd) return;
+  var days2=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+  var regIcons={West:'🌊',Mountain:'⛰️',South:'☀️',NFC:'🏪'};
+  var regOrder=['West','Mountain','South','NFC'];
+
+  // Highlight selected day card
+  document.querySelectorAll('[id^="daycard-"]').forEach(function(c){
+    c.style.background='var(--color-background-primary)';
+    c.style.borderColor='';
+  });
+  var dc=document.getElementById('daycard-'+ship.replace(/\//g,'-'));
+  if(dc){ dc.style.background='#E6F1FB'; dc.style.borderLeftColor='#185FA5'; dc.style.borderRightColor='#185FA5'; dc.style.borderBottomColor='#185FA5'; }
+
+  // Update summary bar
+  var delta=sd.qty-sd.prevQty;
+  document.getElementById('res-day-label').textContent=ship+' · Total Kroger';
+  document.getElementById('res-total-qty').textContent=sd.qty.toLocaleString();
+  var deltaStr=delta===0?'sin cambio vs ayer':(delta>0?('▲ +'+delta.toLocaleString()+' vs ayer'):('▼ '+Math.abs(delta).toLocaleString()+' vs ayer'));
+  document.getElementById('res-total-sub').innerHTML='cajas activas · '+deltaStr+' · '+sd.pos+' POs';
+  document.getElementById('res-crit').textContent=sd.crit;
+  document.getElementById('res-chg').textContent=sd.chg;
+  document.getElementById('res-ok').textContent=sd.pos-sd.chg-sd.crit;
+
+  // Build region cards for this ship date
+  var regKeys=regOrder.concat(Object.keys(regions).filter(function(r){return regOrder.indexOf(r)<0;}));
+  var regHtml='';
+  var firstReg=null;
+  regKeys.forEach(function(reg){
+    if(!regions[reg]||!regions[reg][ship]) return;
+    if(!firstReg) firstReg=reg;
+    var rs=regions[reg][ship];
+    var delta2=rs.qty-rs.prevQty;
+    var allPos=[]; Object.values(rs.divs).forEach(function(d){allPos=allPos.concat(d.pos);});
+    var nC=allPos.filter(function(p){return p.status==='gone';}).length;
+    var nW=allPos.filter(function(p){return p.status==='changed';}).length;
+    var nA=allPos.filter(function(p){return p.status==='new';}).length;
+    var pills='';
+    if(nC) pills+='<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#FCEBEB;color:#791F1F;font-weight:500">'+nC+' cancel</span> ';
+    if(nW) pills+='<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#FAEEDA;color:#633806;font-weight:500">'+nW+' cambios</span> ';
+    if(nA) pills+='<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#EAF3DE;color:#27500A;font-weight:500">'+nA+' add</span> ';
+    if(!nC&&!nW&&!nA) pills='<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#EAF3DE;color:#27500A;font-weight:500">ok</span>';
+    var pct=Math.round(rs.qty/(sd.qty||1)*100);
+    regHtml+='<div id="regcard-'+reg+'" style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:.875rem 1rem;cursor:pointer" '
+      +'onclick="selectRegion(this.dataset.reg,this.dataset.ship)" data-reg="'+reg+'" data-ship="'+ship+'">'
+      +'<div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px">'+(regIcons[reg]||'📦')+' '+reg+'</div>'
+      +'<div style="font-size:18px;font-weight:500;font-family:var(--font-mono);color:var(--color-text-primary);line-height:1;margin-bottom:3px">'+rs.qty.toLocaleString()+'</div>'
+      +'<div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:6px">'+allPos.length+' POs · <span style="color:'+(delta2<0?'#A32D2D':delta2>0?'#27500A':'var(--color-text-tertiary)')+'">'+( delta2===0?'sin cambios':(delta2>0?'▲ +':('▼ '))+Math.abs(delta2).toLocaleString())+'</span></div>'
+      +'<div style="height:3px;background:var(--color-border-tertiary);border-radius:2px;margin-bottom:6px;overflow:hidden"><div style="height:3px;background:#185FA5;width:'+pct+'%;border-radius:2px"></div></div>'
+      +'<div style="display:flex;gap:4px;flex-wrap:wrap">'+pills+'</div>'
+      +'</div>';
+  });
+  document.getElementById('res-regions').innerHTML=regHtml;
+
+  // Auto-select first region
+  if(firstReg) selectRegion(firstReg, ship);
+}
+
+function selectRegion(reg, ship){
+  var el=document.getElementById('resumen-view');
+  if(!el||!el._regions) return;
+  var regions=el._regions;
+  if(!regions[reg]||!regions[reg][ship]) return;
+  var days2=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+
+  // Highlight selected region card
+  document.querySelectorAll('[id^="regcard-"]').forEach(function(c){
+    c.style.background='var(--color-background-primary)';
+    c.style.borderColor='';
+  });
+  var rc=document.getElementById('regcard-'+reg);
+  if(rc){ rc.style.background='#E6F1FB'; rc.style.borderColor='#185FA5'; }
+
+  var rs=regions[reg][ship];
+  var dayName=''; try{var dd=new Date(toISO(ship)+'T12:00:00');dayName=days2[dd.getDay()];}catch(e){}
+  var allPos=[]; Object.values(rs.divs).forEach(function(d){allPos=allPos.concat(d.pos);});
+
+  var html='<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden">'
+    +'<div style="padding:.875rem 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:8px;background:var(--color-background-secondary)">'
+    +'<span style="font-size:13px;font-weight:500;color:var(--color-text-primary);flex:1">'+reg+' · '+ship+' ('+dayName+')</span>'
+    +'<span style="font-size:11px;color:var(--color-text-secondary)">'+allPos.length+' POs · '+rs.qty.toLocaleString()+' cajas</span>'
     +'</div>';
 
-  var regKeys=regOrder.concat(Object.keys(regions).filter(function(r){return regOrder.indexOf(r)<0;}));
-  regKeys.forEach(function(reg){
-    if(!regions[reg]) return;
-    var rd=regions[reg];
-    var delta=rd.qty-rd.prevQty;
-    var allPos=[]; Object.values(rd.ships).forEach(function(s){Object.values(s.divs).forEach(function(d){allPos=allPos.concat(d.pos);});});
-    var pills=mkPills(allPos);
-    var deltaStr=delta===0?'Sin cambios':(delta>0?'▲ +'+delta.toLocaleString():'▼ '+Math.abs(delta).toLocaleString())+' cajas';
-    var deltaCls=delta>0?'rup':delta<0?'rdown':'rneutral';
-    var rid='r'+(uid++);
-    html+='<div class="region-block"><div class="region-header" data-bid="'+rid+'" onclick="toggleRB(this)">'
-      +'<span class="region-name">'+(regIcons[reg]||'📦')+' '+reg+'</span>'
-      +'<div style="display:flex;gap:16px;flex:1">'
-      +'<div class="stat-n"><div class="kpi-val" style="font-size:16px">'+allPos.length+'</div><div class="kpi-lbl">POs</div></div>'
-      +'<div class="stat-n"><div class="kpi-val" style="font-size:16px">'+rd.qty.toLocaleString()+'</div><div class="kpi-lbl">Cajas hoy</div></div>'
-      +'<div class="stat-n"><div class="kpi-val" style="font-size:16px" class="'+deltaCls+'">'+deltaStr+'</div><div class="kpi-lbl">vs ayer</div></div>'
+  // Table per division
+  var uid=0;
+  Object.keys(rs.divs).sort().forEach(function(div){
+    var dd=rs.divs[div];
+    var delta=dd.qty-dd.prevQty;
+    var allDivPos=dd.pos;
+    var nC=allDivPos.filter(function(p){return p.status==='gone';}).length;
+    var nW=allDivPos.filter(function(p){return p.status==='changed';}).length;
+    var nA=allDivPos.filter(function(p){return p.status==='new';}).length;
+    var did='rdiv'+uid++;
+    html+='<div style="border-bottom:0.5px solid var(--color-border-tertiary)">'
+      +'<div style="display:flex;align-items:center;gap:10px;padding:.75rem 1.25rem;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleResDiv(this.dataset.did)" data-did="'+did+'">'
+      +'<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:#E6F1FB;color:#0C447C;font-weight:500;min-width:100px;text-align:center">'+div+'</span>'
+      +'<span style="font-size:11px;color:var(--color-text-secondary)"><strong style="color:var(--color-text-primary)">'+allDivPos.length+'</strong> POs · <strong style="color:var(--color-text-primary)">'+dd.qty.toLocaleString()+'</strong> cajas</span>'
+      +'<span style="font-size:11px;font-weight:500;color:'+(delta<0?'#A32D2D':delta>0?'#27500A':'var(--color-text-tertiary)')+'">'+( delta===0?'—':(delta>0?'▲ +':('▼ '))+Math.abs(delta).toLocaleString())+'</span>'
+      +(nC?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#FCEBEB;color:#791F1F;font-weight:500;margin-left:auto">'+nC+' cancel</span>':nW?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#FAEEDA;color:#633806;font-weight:500;margin-left:auto">'+nW+' cambios</span>':'<span style="margin-left:auto;font-size:10px;color:var(--color-text-tertiary)">ok</span>')
+      +'<i class="ti ti-chevron-down" id="arrrd'+did+'" style="font-size:13px;color:var(--color-text-tertiary);margin-left:8px;transition:transform .2s" aria-hidden="true"></i>'
       +'</div>'
-      +'<div class="region-pills">'+pills+'</div>'
-      +'<span id="rarr'+rid+'" style="font-size:10px;color:var(--muted);margin-left:8px">▶</span>'
-      +'</div>';
-
-    html+='<div class="region-body" id="'+rid+'" style="display:none">';
-    var shipKeys=Object.keys(rd.ships).sort();
-    shipKeys.forEach(function(ship){
-      var sd=rd.ships[ship];
-      var sdelta=sd.qty-sd.prevQty;
-      var sdPos=[]; Object.values(sd.divs).forEach(function(d){sdPos=sdPos.concat(d.pos);});
-      var spills=mkPills(sdPos);
-      var sdeltaStr=sdelta===0?'Sin cambios':(sdelta>0?'▲ +'+sdelta.toLocaleString():'▼ '+Math.abs(sdelta).toLocaleString());
-      var sdeltaCls=sdelta>0?'#1a6b3a':sdelta<0?'#E24B4A':'var(--muted)';
-      var nOk=sdPos.filter(function(p){return p.status==='same'||p.status==='crit'||p.status==='done';}).length;
-      var nBad=sdPos.length-nOk;
-      var sid='s'+(uid++);
-      var dayName=''; try{var dd=new Date(toISO(ship)+'T12:00:00');dayName=days2[dd.getDay()];}catch(e){}
-      html+='<div style="border-bottom:0.5px solid #e8f0f8">'
-        +'<div style="display:flex;align-items:center;gap:10px;padding:8px 16px 8px 26px;cursor:pointer;background:#f8fbff" data-bid="'+sid+'" onclick="toggleRB(this)">'
-        +'<span style="font-family:monospace;font-weight:800;font-size:11px;color:var(--navy);min-width:90px">📅 '+ship+'</span>'
-        +'<span style="font-size:10px;color:var(--muted);min-width:50px">'+dayName+'</span>'
-        +'<span style="font-size:10px;color:var(--muted)"><b style="color:var(--navy)">'+sdPos.length+'</b> POs</span>'
-        +'<span style="font-size:10px;color:var(--muted)"><b style="color:var(--navy)">'+sd.qty.toLocaleString()+'</b> cajas</span>'
-        +'<span style="font-size:10px;font-weight:700;color:'+sdeltaCls+'">'+sdeltaStr+'</span>'
-        +(nBad>0?'<span style="font-size:10px;color:#E24B4A;font-weight:700">⚠️ '+nBad+' con cambios</span>':'')
-        +'<div style="margin-left:auto;display:flex;gap:4px">'+spills+'</div>'
-        +'<span id="rarr'+sid+'" style="font-size:10px;color:var(--muted);margin-left:6px">▶</span>'
-        +'</div>';
-      html+='<div id="'+sid+'" style="display:none">';
-
-      Object.keys(sd.divs).sort().forEach(function(div){
-        var dd=sd.divs[div];
-        var ddelta=dd.qty-dd.prevQty;
-        var dpills=mkPills(dd.pos);
-        var ddeltaStr=ddelta===0?'—':(ddelta>0?'▲ +'+ddelta.toLocaleString():'▼ '+Math.abs(ddelta).toLocaleString());
-        var ddeltaCls=ddelta>0?'#1a6b3a':ddelta<0?'#E24B4A':'var(--muted)';
-        var did='d'+(uid++);
-        html+='<div style="border-bottom:0.5px solid #e0eaf4">'
-          +'<div style="display:flex;align-items:center;gap:10px;padding:7px 16px 7px 42px;cursor:pointer;background:#f0f6ff" data-bid="'+did+'" onclick="toggleRB(this)">'
-          +'<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:#deeaf7;color:#0C447C;font-weight:600;min-width:100px;text-align:center">'+div+'</span>'
-          +'<span style="font-size:10px;color:var(--muted)"><b style="color:var(--navy)">'+dd.pos.length+'</b> POs · <b style="color:var(--navy)">'+dd.qty.toLocaleString()+'</b> cajas</span>'
-          +'<span style="font-size:10px;font-weight:700;color:'+ddeltaCls+'">'+ddeltaStr+'</span>'
-          +'<div style="margin-left:auto;display:flex;gap:4px">'+dpills+'</div>'
-          +'<span id="rarr'+did+'" style="font-size:10px;color:var(--muted);margin-left:6px">▶</span>'
-          +'</div>';
-        html+='<div id="'+did+'" style="display:none;background:#fff">'
-          +'<div style="display:grid;grid-template-columns:100px 1fr 72px 72px 72px 100px;gap:4px;padding:5px 16px 5px 58px;background:#f8fbff;border-bottom:0.5px solid #e0eaf4">'
-          +'<span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase">PO</span>'
-          +'<span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase">Carrier</span>'
-          +'<span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;text-align:right">Ayer</span>'
-          +'<span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;text-align:right">Hoy</span>'
-          +'<span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;text-align:right">Δ</span>'
-          +'<span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase">Estado</span>'
-          +'</div>';
-        var totAyer=0,totHoy=0;
-        dd.pos.forEach(function(p){
-          totAyer+=p.prevQty; totHoy+=p.qty;
-          var isChg=p.status==='changed'||p.status==='new'||p.status==='gone';
-          var rowBg=isChg?(p.status==='new'?'#F5FBF0':p.status==='gone'?'#FEF5F5':'#FFFBF0'):'';
-          var dq=p.qty-p.prevQty;
-          var dqStr=dq===0?'<span style="color:#a0b4c8">—</span>':(dq>0?'<span style="color:#1a6b3a;font-weight:700">▲ +'+dq+'</span>':'<span style="color:#E24B4A;font-weight:700">▼ '+dq+'</span>');
-          var sb=p.status==='gone'?'<span style="font-size:9px;padding:2px 6px;border-radius:8px;font-weight:700;background:#F7C1C1;color:#791F1F">CANCEL</span>'
-            :p.status==='new'?'<span style="font-size:9px;padding:2px 6px;border-radius:8px;font-weight:700;background:#C0DD97;color:#27500A">ADD</span>'
-            :p.status==='changed'?'<span style="font-size:9px;padding:2px 6px;border-radius:8px;font-weight:700;background:#FAEEDA;color:#633806">Cambio</span>'
-            :'<span style="font-size:9px;padding:2px 6px;border-radius:8px;font-weight:700;background:#e2f5eb;color:#1a6b3a">✅ OK</span>';
-          html+='<div style="display:grid;grid-template-columns:100px 1fr 72px 72px 72px 100px;gap:4px;padding:5px 16px 5px 58px;border-bottom:0.5px solid #f5f8fc;align-items:center;background:'+rowBg+'">'
-            +'<span style="font-family:monospace;font-weight:700;font-size:11px;color:var(--navy)">'+p.po+'</span>'
-            +'<span style="font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escHtml(p.carrier||'')+'</span>'
-            +'<span style="font-family:monospace;font-size:11px;font-weight:600;text-align:right">'+p.prevQty+'</span>'
-            +'<span style="font-family:monospace;font-size:11px;font-weight:600;text-align:right">'+p.qty+'</span>'
-            +'<span style="font-size:11px;text-align:right">'+dqStr+'</span>'
-            +sb
-            +'</div>';
-        });
-        var totDelta=totHoy-totAyer;
-        html+='<div style="display:grid;grid-template-columns:100px 1fr 72px 72px 72px 100px;gap:4px;padding:5px 16px 5px 58px;background:#EEF4FF;border-top:1px solid #c8ddf0">'
-          +'<span style="font-size:10px;font-weight:700;color:var(--navy)">TOTAL</span><span></span>'
-          +'<span style="font-family:monospace;font-size:11px;font-weight:700;text-align:right">'+totAyer.toLocaleString()+'</span>'
-          +'<span style="font-family:monospace;font-size:11px;font-weight:700;text-align:right">'+totHoy.toLocaleString()+'</span>'
-          +'<span style="font-size:11px;font-weight:700;text-align:right;color:'+(totDelta<0?'#E24B4A':totDelta>0?'#1a6b3a':'var(--muted)')+'">'+( totDelta===0?'—':(totDelta>0?'▲ +':('▼ '))+Math.abs(totDelta).toLocaleString())+'</span>'
-          +'<span></span>'
-          +'</div>';
-        html+='</div></div>';
-      });
-      html+='</div></div>';
+      +'<div id="'+did+'" style="display:none">'
+      +'<table style="width:100%;border-collapse:collapse">'
+      +'<thead><tr>'
+      +'<th style="font-size:10px;color:var(--color-text-secondary);font-weight:500;padding:6px 1.25rem;text-align:left;border-bottom:0.5px solid var(--color-border-tertiary)">PO</th>'
+      +'<th style="font-size:10px;color:var(--color-text-secondary);font-weight:500;padding:6px 1.25rem;text-align:left;border-bottom:0.5px solid var(--color-border-tertiary)">Carrier</th>'
+      +'<th style="font-size:10px;color:var(--color-text-secondary);font-weight:500;padding:6px 1.25rem;text-align:right;border-bottom:0.5px solid var(--color-border-tertiary)">Ayer</th>'
+      +'<th style="font-size:10px;color:var(--color-text-secondary);font-weight:500;padding:6px 1.25rem;text-align:right;border-bottom:0.5px solid var(--color-border-tertiary)">Hoy</th>'
+      +'<th style="font-size:10px;color:var(--color-text-secondary);font-weight:500;padding:6px 1.25rem;text-align:right;border-bottom:0.5px solid var(--color-border-tertiary)">Δ</th>'
+      +'<th style="font-size:10px;color:var(--color-text-secondary);font-weight:500;padding:6px 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary)">Estado</th>'
+      +'</tr></thead><tbody>';
+    var totAyer=0,totHoy=0;
+    allDivPos.forEach(function(p){
+      totAyer+=p.prevQty; totHoy+=p.qty;
+      var dq=p.qty-p.prevQty;
+      var dqStr=dq===0?'<span style="color:var(--color-text-tertiary)">—</span>':(dq>0?'<span style="color:#27500A;font-weight:500">▲ +'+dq+'</span>':'<span style="color:#A32D2D;font-weight:500">▼ '+dq+'</span>');
+      var rowBg=p.status==='gone'?'#FEF5F5':p.status==='new'?'#F5FBF0':p.status==='changed'?'#FFFBF0':'';
+      var sb=p.status==='gone'?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#FCEBEB;color:#791F1F;font-weight:500">cancel</span>'
+        :p.status==='new'?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#EAF3DE;color:#27500A;font-weight:500">add</span>'
+        :p.status==='changed'?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#FAEEDA;color:#633806;font-weight:500">cambio</span>'
+        :'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#EAF3DE;color:#27500A;font-weight:500">ok</span>';
+      html+='<tr style="background:'+rowBg+';border-bottom:0.5px solid var(--color-border-tertiary)">'
+        +'<td style="padding:6px 1.25rem;font-size:11px;font-family:var(--font-mono);font-weight:500;color:var(--color-text-primary)">'+p.po+'</td>'
+        +'<td style="padding:6px 1.25rem;font-size:11px;color:var(--color-text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px">'+escHtml(p.carrier)+'</td>'
+        +'<td style="padding:6px 1.25rem;font-size:11px;font-family:var(--font-mono);text-align:right;color:var(--color-text-primary)">'+p.prevQty+'</td>'
+        +'<td style="padding:6px 1.25rem;font-size:11px;font-family:var(--font-mono);text-align:right;color:var(--color-text-primary)">'+p.qty+'</td>'
+        +'<td style="padding:6px 1.25rem;font-size:11px;text-align:right">'+dqStr+'</td>'
+        +'<td style="padding:6px 1.25rem">'+sb+'</td>'
+        +'</tr>';
     });
-    html+='</div></div>';
+    var totDelta=totHoy-totAyer;
+    html+='<tr style="background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary)">'
+      +'<td style="padding:6px 1.25rem;font-size:11px;font-weight:500;color:var(--color-text-primary)">Total</td><td></td>'
+      +'<td style="padding:6px 1.25rem;font-size:11px;font-family:var(--font-mono);text-align:right;font-weight:500">'+totAyer.toLocaleString()+'</td>'
+      +'<td style="padding:6px 1.25rem;font-size:11px;font-family:var(--font-mono);text-align:right;font-weight:500">'+totHoy.toLocaleString()+'</td>'
+      +'<td style="padding:6px 1.25rem;font-size:11px;text-align:right;font-weight:500;color:'+(totDelta<0?'#A32D2D':totDelta>0?'#27500A':'var(--color-text-tertiary)')+'">'+( totDelta===0?'—':(totDelta>0?'▲ +':('▼ '))+Math.abs(totDelta).toLocaleString())+'</td>'
+      +'<td></td></tr>';
+    html+='</tbody></table></div></div>';
   });
-  el.innerHTML=html;
+  html+='</div>';
+  document.getElementById('res-detail').innerHTML=html;
+}
+
+function toggleResDiv(idOrEl){
+  var id=typeof idOrEl==='string'?idOrEl:idOrEl.dataset.did;
+  var el=document.getElementById(id);
+  var arr=document.getElementById('arrrd'+id);
+  if(!el) return;
+  var h=el.style.display==='none';
+  el.style.display=h?'block':'none';
+  if(arr) arr.style.transform=h?'rotate(180deg)':'';
 }
 
 function toggleRB(el){
