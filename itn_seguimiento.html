@@ -94,6 +94,36 @@ tr.row-gone td{border-left:3px solid #bbb;opacity:.55}
 .det-tbl td.tl{text-align:left}
 .det-tbl tr:last-child td{border-bottom:none}
 .nota-row-border td:first-child{border-left:3px solid #7C3AED !important}
+/* RESUMEN DEL DÍA */
+.view-toggle{display:flex;gap:4px;background:var(--white);border:0.5px solid var(--border);border-radius:8px;padding:3px;margin-bottom:10px;width:fit-content}
+.vbtn{padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+.vbtn.active{background:var(--navy);color:#fff}
+.vbtn.inactive{background:transparent;color:var(--muted)}
+#resumen-view{display:none}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.kpi{background:var(--white);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;border-top:3px solid var(--border)}
+.kpi.kpi-blue{border-top-color:#1a5fa8}.kpi.kpi-red{border-top-color:#E24B4A}.kpi.kpi-orange{border-top-color:#EF9F27}.kpi.kpi-green{border-top-color:#1a6b3a}
+.kpi-val{font-size:24px;font-weight:800;font-family:monospace;line-height:1;color:var(--navy)}
+.kpi-lbl{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:3px}
+.kpi-sub{font-size:10px;margin-top:3px}
+.kpi-sub.kdown{color:#E24B4A}.kpi-sub.kup{color:#1a6b3a}.kpi-sub.kneutral{color:var(--muted)}
+.region-block{background:var(--white);border:0.5px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.region-header{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:0.5px solid var(--border)}
+.region-name{font-size:12px;font-weight:800;color:var(--navy);min-width:90px}
+.region-qty{font-family:monospace;font-weight:700;font-size:13px;color:var(--navy)}
+.region-delta{font-size:11px;font-weight:700}
+.region-delta.rdown{color:#E24B4A}.region-delta.rup{color:#1a6b3a}.region-delta.rneutral{color:var(--muted)}
+.region-pills{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+.rpill{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:700;white-space:nowrap}
+.rp-cancel{background:#F7C1C1;color:#791F1F}.rp-add{background:#C0DD97;color:#27500A}.rp-warn{background:#FAC775;color:#633806}.rp-ok{background:#e2f5eb;color:#1a6b3a}
+.region-body{padding:8px 14px}
+.chg-title{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.chg-row{display:grid;grid-template-columns:100px 100px 1fr auto;gap:8px;align-items:center;padding:4px 0;border-bottom:0.5px solid #f5f8fc;font-size:11px}
+.chg-row:last-child{border-bottom:none}
+.chg-div{font-size:10px;padding:1px 6px;border-radius:4px;background:#deeaf7;color:#0C447C;font-weight:500;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chg-po{font-family:monospace;font-weight:700;color:var(--navy)}
+.chg-sku{font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chg-badge{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:700;white-space:nowrap;text-align:right}
 .nota-chip{display:inline-flex;align-items:center;gap:3px;background:#EDE9FE;color:#4C1D95;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;border:0.5px solid #C4B5FD;cursor:pointer;white-space:nowrap;margin-right:4px}
 .nota-chip.resolved{background:#e2f5eb;color:#1a6b3a;border-color:#97C459}
 .nota-alert{background:#F5F3FF;border:1px solid #C4B5FD;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:none;align-items:center;gap:10px}
@@ -171,6 +201,12 @@ tr.row-gone td{border-left:3px solid #bbb;opacity:.55}
 <div class="sbar" id="sbar"></div>
 
 <div id="dash" style="display:none">
+  <div class="view-toggle">
+    <button class="vbtn active" id="vbtn-po" onclick="setView('po')">📋 Por PO</button>
+    <button class="vbtn inactive" id="vbtn-resumen" onclick="setView('resumen')">📊 Resumen del día</button>
+  </div>
+  <div id="resumen-view"></div>
+  <div id="po-view">
   <div class="nota-alert" id="notas-alert">
   <span style="font-size:16px">📝</span>
   <div class="nota-alert-text" id="notas-alert-text"></div>
@@ -255,6 +291,7 @@ tr.row-gone td{border-left:3px solid #bbb;opacity:.55}
     </div>
   </div>
 </div>
+  </div>
 </div>
 
 <script>
@@ -1104,6 +1141,132 @@ function buildNotesAlert(){
   al.style.display='flex';
   document.getElementById('notas-alert-text').innerHTML='<strong>'+pos.length+' PO'+(pos.length>1?'s':'')+' con notas pendientes:</strong> <span style="font-family:monospace;font-size:10px">'+pos.slice(0,6).join(' · ')+(pos.length>6?' +más':'')+'</span>';
 }
+// ── RESUMEN DEL DÍA ──
+var CURRENT_VIEW='po';
+function setView(v){
+  CURRENT_VIEW=v;
+  document.getElementById('vbtn-po').className='vbtn '+(v==='po'?'active':'inactive');
+  document.getElementById('vbtn-resumen').className='vbtn '+(v==='resumen'?'active':'inactive');
+  document.getElementById('po-view').style.display=v==='po'?'':'none';
+  document.getElementById('resumen-view').style.display=v==='resumen'?'':'none';
+  if(v==='resumen') buildResumen();
+}
+
+function buildResumen(){
+  if(!_allRows||!_allRows.length){ document.getElementById('resumen-view').innerHTML='<div style="padding:2rem;text-align:center;color:var(--muted)">Carga un archivo ITN para ver el resumen.</div>'; return; }
+  var rows=_allRows;
+  var totalPOs=rows.length;
+  var totalQty=0, prevQty=0;
+  rows.forEach(function(r){
+    var lastDay=r.days[r.days.length-1];
+    var prevDay=null; for(var i=r.days.length-2;i>=0;i--){ if(r.days[i]){prevDay=r.days[i];break;} }
+    if(lastDay) totalQty+=Math.round(lastDay.qty);
+    if(prevDay) prevQty+=Math.round(prevDay.qty);
+  });
+  var deltaQty=totalQty-prevQty;
+  var nChanges=rows.filter(function(r){ return r.status==='changed'||r.status==='new'||r.status==='gone'; }).length;
+  var nCrit=rows.filter(function(r){ return r.status==='crit'; }).length;
+
+  // Group by region
+  var regions={};
+  rows.forEach(function(r){
+    var reg=divRegion(r.div)||'Sin región';
+    if(!regions[reg]) regions[reg]={qty:0,prevQty:0,changes:[]};
+    var lastDay=r.days[r.days.length-1];
+    var prevDay=null; for(var i=r.days.length-2;i>=0;i--){ if(r.days[i]){prevDay=r.days[i];break;} }
+    if(lastDay) regions[reg].qty+=Math.round(lastDay.qty);
+    if(prevDay) regions[reg].prevQty+=Math.round(prevDay.qty);
+    // Detect changes in this PO
+    if(r.status==='changed'||r.status==='new'||r.status==='gone'){
+      var chgType=r.status==='new'?'add':(r.status==='gone'?'cancel':'warn');
+      var dq=r.dQ||0;
+      regions[reg].changes.push({po:r.po,div:r.div,status:r.status,dq:dq,type:chgType});
+    }
+    // Check SKU-level changes
+    if(r.status==='same'||r.status==='crit'){
+      // check prods for sku-level cancel
+      if(r.prods){
+        Object.keys(r.prods).forEach(function(k){
+          var dayQtys=HIST_DATA.map(function(d){ var dp=d.pos[r.po]; return (dp&&dp.prods&&dp.prods.hasOwnProperty(k))?Math.round(dp.prods[k].qty):null; });
+          var lq=dayQtys[dayQtys.length-1];
+          var pq=null; for(var i=dayQtys.length-2;i>=0;i--){ if(dayQtys[i]!==null){pq=dayQtys[i];break;} }
+          if(lq===null&&pq!==null){
+            regions[reg].changes.push({po:r.po,div:r.div,status:'gone',dq:-pq,type:'cancel',sku:r.prods[k].desc||k});
+          }
+        });
+      }
+    }
+  });
+
+  var regIcons={'West':'🌊','Mountain':'⛰️','South':'☀️','NFC':'🏪','Sin región':'📦'};
+  var regOrder=['West','Mountain','South','NFC','Sin región'];
+
+  var html='<div class="kpis">'
+    +'<div class="kpi kpi-blue"><div class="kpi-val">'+totalPOs+'</div><div class="kpi-lbl">POs totales</div><div class="kpi-sub kneutral">'+HIST_DATA.length+' días en historial</div></div>'
+    +'<div class="kpi kpi-blue"><div class="kpi-val">'+totalQty.toLocaleString()+'</div><div class="kpi-lbl">Cajas hoy</div><div class="kpi-sub '+(deltaQty<0?'kdown':deltaQty>0?'kup':'kneutral')+'">'+(deltaQty>0?'▲ +':deltaQty<0?'▼ ':'')+deltaQty.toLocaleString()+' vs ayer</div></div>'
+    +'<div class="kpi kpi-red"><div class="kpi-val">'+nChanges+'</div><div class="kpi-lbl">POs con cambios</div><div class="kpi-sub kneutral">vs día anterior</div></div>'
+    +'<div class="kpi kpi-orange"><div class="kpi-val">'+nCrit+'</div><div class="kpi-lbl">Críticos</div><div class="kpi-sub kneutral">ship date vencida</div></div>'
+    +'</div>';
+
+  // Region blocks
+  var regKeys=Object.keys(regions).sort(function(a,b){ return (regOrder.indexOf(a)<0?99:regOrder.indexOf(a))-(regOrder.indexOf(b)<0?99:regOrder.indexOf(b)); });
+  regKeys.forEach(function(reg,ri){
+    var rd=regions[reg];
+    var delta=rd.qty-rd.prevQty;
+    var nCancel=rd.changes.filter(function(c){return c.type==='cancel';}).length;
+    var nAdd=rd.changes.filter(function(c){return c.type==='add';}).length;
+    var nWarn=rd.changes.filter(function(c){return c.type==='warn';}).length;
+    var pills='';
+    if(nCancel) pills+='<span class="rpill rp-cancel">'+nCancel+' CANCEL</span>';
+    if(nAdd) pills+='<span class="rpill rp-add">'+nAdd+' ADD</span>';
+    if(nWarn) pills+='<span class="rpill rp-warn">'+nWarn+' cambios</span>';
+    if(!rd.changes.length) pills='<span class="rpill rp-ok">✅ Sin cambios</span>';
+    var deltaStr=delta===0?'Sin cambio':(delta>0?'▲ +'+delta.toLocaleString():('▼ '+delta.toLocaleString()))+' cajas';
+    var deltaCls=delta>0?'rup':delta<0?'rdown':'rneutral';
+    var bodyId='rbody-'+ri;
+    html+='<div class="region-block">'
+      +'<div class="region-header" onclick="toggleRegion(this)" data-body="'+bodyId+'">'  
+      +'<span class="region-name">'+(regIcons[reg]||'📦')+' '+reg+'</span>'
+      +'<span class="region-qty">'+rd.qty.toLocaleString()+'</span>'
+      +'<span class="region-delta '+deltaCls+'">'+deltaStr+'</span>'
+      +'<div class="region-pills">'+pills+'</div>'
+      +'<span id="arr-'+bodyId+'">'+(!rd.changes.length?'':'▼')+'</span>'
+      +'</div>';
+    if(rd.changes.length){
+      html+='<div class="region-body" id="'+bodyId+'">'
+        +'<div class="chg-title">Cambios detectados</div>';
+      // Deduplicate changes by PO
+      var seen={};
+      rd.changes.forEach(function(c){
+        var key=c.po+(c.sku||'');
+        if(seen[key]) return; seen[key]=true;
+        var badgeCls=c.type==='cancel'?'rp-cancel':c.type==='add'?'rp-add':'rp-warn';
+        var badgeTxt=c.type==='cancel'?'CANCEL':c.type==='add'?('ADD '+(c.dq>0?'+'+c.dq:'')):((c.dq>0?'+':'')+c.dq+' cajas');
+        html+='<div class="chg-row">'
+          +'<span class="chg-div">'+c.div+'</span>'
+          +'<span class="chg-po">'+c.po+'</span>'
+          +'<span class="chg-sku">'+(c.sku||'')+'</span>'
+          +'<span class="chg-badge '+badgeCls+'">'+badgeTxt+'</span>'
+          +'</div>';
+      });
+      html+='</div>';
+    }
+    html+='</div>';
+  });
+
+  document.getElementById('resumen-view').innerHTML=html;
+}
+
+function toggleRegion(header){
+  var id=header.getAttribute('data-body');
+  var el=document.getElementById(id);
+  var arr=document.getElementById('arr-'+id);
+  if(!el) return;
+  var hidden=el.style.display==='none'||el.style.display==='';
+  el.style.display=hidden?'block':'none';
+  if(arr) arr.textContent=hidden?'▼':'▶';
+}
+
 function saveNote(po){
   var el=document.getElementById('note-'+po);
   if(!el) return;
