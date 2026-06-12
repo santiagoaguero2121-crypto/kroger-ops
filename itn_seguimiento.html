@@ -223,7 +223,7 @@ tr.row-gone td{border-left:3px solid #bbb;opacity:.55}
   <div class="filters">
     <label>Estado:</label>
     <select id="f-show" onchange="applyF()">
-      <option value="all">Todos</option>
+      <option value="">Todos</option>
       <option value="crit">🚨 Críticos</option>
       <option value="changed">⚠️ Con cambios</option>
       <option value="new">🆕 Nuevos</option>
@@ -795,7 +795,8 @@ function clearF(){
   var ff=document.getElementById('f-from'); if(ff) ff.value='';
   var ft=document.getElementById('f-to'); if(ft) ft.value='';
   document.querySelectorAll('#stats .stat').forEach(function(el){ el.style.outline=''; el.style.opacity='1'; });
-  ['f-show','f-day','f-reg','f-div'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['f-day','f-reg','f-div'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var fs=document.getElementById('f-show'); if(fs) fs.value='';
   SHIP_SELECTED.clear(); buildShipDD(Array.from(document.querySelectorAll('#ship-dd-items div')).map(function(el){var s=el.querySelectorAll('span')[0];return s?s.textContent.trim():'';}));
   document.getElementById('f-po').value='';
   var divSet={};
