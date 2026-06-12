@@ -1197,8 +1197,22 @@ function buildResumen(){
   });
 
   // Week strip HTML
-  var sortedShips=Object.keys(shipDates).filter(function(s){return s!=='Sin fecha';}).sort();
-  var weekHtml='<div style="display:grid;grid-template-columns:repeat('+Math.min(sortedShips.length,7)+',1fr);gap:6px;margin-bottom:1rem">';
+  var allShips=Object.keys(shipDates).filter(function(s){return s!=='Sin fecha';}).sort();
+  var today2=todayISO();
+  var sortedShips=allShips.filter(function(s){return toISO(s)>=today2;});
+  if(!sortedShips.length) sortedShips=allShips; // fallback if all past
+
+  // Desde/Hasta filter bar for resumen
+  var weekHtml='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 12px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md)">'
+    +'<span style="font-size:11px;color:var(--color-text-secondary)">Filtrar:</span>'
+    +'<label style="font-size:11px;color:var(--color-text-secondary)">Desde</label>'
+    +'<input type="date" id="res-from" value="'+today2+'" onchange="filterResumen()" style="font-size:11px;padding:3px 7px;border:0.5px solid var(--color-border-tertiary);border-radius:6px;height:28px;font-family:inherit;background:var(--color-background-primary);color:var(--color-text-primary)">'
+    +'<label style="font-size:11px;color:var(--color-text-secondary)">Hasta</label>'
+    +'<input type="date" id="res-to" onchange="filterResumen()" style="font-size:11px;padding:3px 7px;border:0.5px solid var(--color-border-tertiary);border-radius:6px;height:28px;font-family:inherit;background:var(--color-background-primary);color:var(--color-text-primary)">'
+    +'<button onclick="clearResumenFilter()" style="font-size:11px;padding:3px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:6px;cursor:pointer;background:var(--color-background-primary);color:var(--color-text-secondary)">Ver todo</button>'
+    +'</div>';
+
+  weekHtml+='<div id="res-week-strip" style="display:grid;grid-template-columns:repeat('+Math.min(sortedShips.length,7)+',1fr);gap:6px;margin-bottom:1rem">';
   sortedShips.slice(0,7).forEach(function(ship,si){
     var sd=shipDates[ship];
     var delta=sd.qty-sd.prevQty;
@@ -1216,7 +1230,7 @@ function buildResumen(){
       +'<div style="font-size:9px;font-weight:500;color:'+alertCol+'">'+alertTxt+'</div>'
       +'</div>';
   });
-  weekHtml+='</div>';
+  weekHtml+='</div></div>';
 
   // Summary bar + regions + detail placeholder
   weekHtml+='<div id="res-summary-bar" style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.5rem;margin-bottom:1rem;display:flex;align-items:center;gap:2rem">'
@@ -1239,7 +1253,12 @@ function buildResumen(){
   el._shipDates=shipDates;
 
   // Auto-select first ship date
-  if(sortedShips.length) selectShipDay(sortedShips[0]);
+  // Store all ships on element for filter access
+  el._allShips=allShips;
+  el._shipDates=shipDates;
+  // Auto-select today or nearest future
+  var best=sortedShips[0]||allShips[allShips.length-1];
+  if(best) selectShipDay(best);
 }
 
 function selectShipDay(elOrShip){
@@ -1290,228 +1309,17 @@ function selectShipDay(elOrShip){
     if(nA) pills+='<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#EAF3DE;color:#27500A;font-weight:500">'+nA+' add</span> ';
     if(!nC&&!nW&&!nA) pills='<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#EAF3DE;color:#27500A;font-weight:500">ok</span>';
     var pct=Math.round(rs.qty/(sd.qty||1)*100);
-    regHtml+='<div id="regcard-'+reg+'" style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:.875rem 1rem;cursor:pointer" '
-      +'onclick="selectRegion(this.dataset.reg,this.dataset.ship)" data-reg="'+reg+'" data-ship="'+ship+'">'
-      +'<div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px">'+(regIcons[reg]||'📦')+' '+reg+'</div>'
-      +'<div style="font-size:18px;font-weight:500;font-family:var(--font-mono);color:var(--color-text-primary);line-height:1;margin-bottom:3px">'+rs.qty.toLocaleString()+'</div>'
-      +'<div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:6px">'+allPos.length+' POs · <span style="color:'+(delta2<0?'#A32D2D':delta2>0?'#27500A':'var(--color-text-tertiary)')+'">'+( delta2===0?'sin cambios':(delta2>0?'▲ +':('▼ '))+Math.abs(delta2).toLocaleString())+'</span></div>'
-      +'<div style="height:3px;background:var(--color-border-tertiary);border-radius:2px;margin-bottom:6px;overflow:hidden"><div style="height:3px;background:#185FA5;width:'+pct+'%;border-radius:2px"></div></div>'
-      +'<div style="display:flex;gap:4px;flex-wrap:wrap">'+pills+'</div>'
-      +'</div>';
-  });
-  document.getElementById('res-regions').innerHTML=regHtml;
-
-  // Auto-select first region
-  if(firstReg) selectRegion(firstReg, ship);
-}
-
-function selectRegion(reg, ship){
-  var el=document.getElementById('resumen-view');
-  if(!el||!el._regions) return;
-  var regions=el._regions;
-  if(!regions[reg]||!regions[reg][ship]) return;
-  var days2=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
-
-  // Highlight selected region card
-  document.querySelectorAll('[id^="regcard-"]').forEach(function(c){
-    c.style.background='var(--color-background-primary)';
-    c.style.borderColor='';
-  });
-  var rc=document.getElementById('regcard-'+reg);
-  if(rc){ rc.style.background='#E6F1FB'; rc.style.borderColor='#185FA5'; }
-
-  var rs=regions[reg][ship];
-  var dayName=''; try{var dd=new Date(toISO(ship)+'T12:00:00');dayName=days2[dd.getDay()];}catch(e){}
-  var allPos=[]; Object.values(rs.divs).forEach(function(d){allPos=allPos.concat(d.pos);});
-
-  var html='<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden">'
-    +'<div style="padding:.875rem 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:8px;background:var(--color-background-secondary)">'
-    +'<span style="font-size:13px;font-weight:500;color:var(--color-text-primary);flex:1">'+reg+' · '+ship+' ('+dayName+')</span>'
-    +'<span style="font-size:11px;color:var(--color-text-secondary)">'+allPos.length+' POs · '+rs.qty.toLocaleString()+' cajas</span>'
-    +'</div>';
-
-  // Table per division
-  var uid=0;
-  Object.keys(rs.divs).sort().forEach(function(div){
-    var dd=rs.divs[div];
-    var delta=dd.qty-dd.prevQty;
-    var allDivPos=dd.pos;
-    var nC=allDivPos.filter(function(p){return p.status==='gone';}).length;
-    var nW=allDivPos.filter(function(p){return p.status==='changed';}).length;
-    var nA=allDivPos.filter(function(p){return p.status==='new';}).length;
-    var did='rdiv'+uid++;
-    html+='<div style="border-bottom:0.5px solid var(--color-border-tertiary)">'
-      +'<div style="display:flex;align-items:center;gap:10px;padding:.75rem 1.25rem;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleResDiv(this.dataset.did)" data-did="'+did+'">'
-      +'<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:#E6F1FB;color:#0C447C;font-weight:500;min-width:100px;text-align:center">'+div+'</span>'
-      +'<span style="font-size:11px;color:var(--color-text-secondary)"><strong style="color:var(--color-text-primary)">'+allDivPos.length+'</strong> POs · <strong style="color:var(--color-text-primary)">'+dd.qty.toLocaleString()+'</strong> cajas</span>'
-      +'<span style="font-size:11px;font-weight:500;color:'+(delta<0?'#A32D2D':delta>0?'#27500A':'var(--color-text-tertiary)')+'">'+( delta===0?'—':(delta>0?'▲ +':('▼ '))+Math.abs(delta).toLocaleString())+'</span>'
-      +(nC?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#FCEBEB;color:#791F1F;font-weight:500;margin-left:auto">'+nC+' cancel</span>':nW?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#FAEEDA;color:#633806;font-weight:500;margin-left:auto">'+nW+' cambios</span>':'<span style="margin-left:auto;font-size:10px;color:var(--color-text-tertiary)">ok</span>')
-      +'<i class="ti ti-chevron-down" id="arrrd'+did+'" style="font-size:13px;color:var(--color-text-tertiary);margin-left:8px;transition:transform .2s" aria-hidden="true"></i>'
+    var nOk=allPos.length-nC-nW-nA;
+    regHtml+='<div id="regcard-'+reg+'" style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:.875rem 1rem;cursor:pointer" onclick="selectRegion(this.dataset.reg,this.dataset.ship)" data-reg="'+reg+'" data-ship="'+ship+'">'
+      +'<div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:.75rem">'+(regIcons[reg]||'📦')+' '+reg+'</div>'
+      +'<div style="font-size:28px;font-weight:500;font-family:var(--font-mono);color:var(--color-text-primary);line-height:1;margin-bottom:3px">'+allPos.length+'</div>'
+      +'<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:.75rem">POs activos</div>'
+      +'<div style="display:flex;gap:12px">'
+      +'<div style="text-align:center"><div style="font-size:16px;font-weight:500;font-family:var(--font-mono);color:'+(nC>0?'#A32D2D':'var(--color-text-tertiary)')+'">'+nC+'</div><div style="font-size:9px;color:var(--color-text-secondary)">cancel</div></div>'
+      +'<div style="width:1px;background:var(--color-border-tertiary)"></div>'
+      +'<div style="text-align:center"><div style="font-size:16px;font-weight:500;font-family:var(--font-mono);color:'+(nW>0?'#633806':'var(--color-text-tertiary)')+'">'+nW+'</div><div style="font-size:9px;color:var(--color-text-secondary)">cambios</div></div>'
+      +'<div style="width:1px;background:var(--color-border-tertiary)"></div>'
+      +'<div style="text-align:center"><div style="font-size:16px;font-weight:500;font-family:var(--font-mono);color:'+(nOk>0?'#27500A':'var(--color-text-tertiary)')+'">'+nOk+'</div><div style="font-size:9px;color:var(--color-text-secondary)">ok</div></div>'
       +'</div>'
-      +'<div id="'+did+'" style="display:none">'
-      +'<table style="width:100%;border-collapse:collapse">'
-      +'<thead><tr>'
-      +'<th style="font-size:10px;color:var(--color-text-secondary);font-weight:500;padding:6px 1.25rem;text-align:left;border-bottom:0.5px solid var(--color-border-tertiary)">PO</th>'
-      +'<th style="font-size:10px;color:var(--color-text-secondary);font-weight:500;padding:6px 1.25rem;text-align:left;border-bottom:0.5px solid var(--color-border-tertiary)">Carrier</th>'
-      +'<th style="font-size:10px;color:var(--color-text-secondary);font-weight:500;padding:6px 1.25rem;text-align:right;border-bottom:0.5px solid var(--color-border-tertiary)">Ayer</th>'
-      +'<th style="font-size:10px;color:var(--color-text-secondary);font-weight:500;padding:6px 1.25rem;text-align:right;border-bottom:0.5px solid var(--color-border-tertiary)">Hoy</th>'
-      +'<th style="font-size:10px;color:var(--color-text-secondary);font-weight:500;padding:6px 1.25rem;text-align:right;border-bottom:0.5px solid var(--color-border-tertiary)">Δ</th>'
-      +'<th style="font-size:10px;color:var(--color-text-secondary);font-weight:500;padding:6px 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary)">Estado</th>'
-      +'</tr></thead><tbody>';
-    var totAyer=0,totHoy=0;
-    allDivPos.forEach(function(p){
-      totAyer+=p.prevQty; totHoy+=p.qty;
-      var dq=p.qty-p.prevQty;
-      var dqStr=dq===0?'<span style="color:var(--color-text-tertiary)">—</span>':(dq>0?'<span style="color:#27500A;font-weight:500">▲ +'+dq+'</span>':'<span style="color:#A32D2D;font-weight:500">▼ '+dq+'</span>');
-      var rowBg=p.status==='gone'?'#FEF5F5':p.status==='new'?'#F5FBF0':p.status==='changed'?'#FFFBF0':'';
-      var sb=p.status==='gone'?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#FCEBEB;color:#791F1F;font-weight:500">cancel</span>'
-        :p.status==='new'?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#EAF3DE;color:#27500A;font-weight:500">add</span>'
-        :p.status==='changed'?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#FAEEDA;color:#633806;font-weight:500">cambio</span>'
-        :'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#EAF3DE;color:#27500A;font-weight:500">ok</span>';
-      html+='<tr style="background:'+rowBg+';border-bottom:0.5px solid var(--color-border-tertiary)">'
-        +'<td style="padding:6px 1.25rem;font-size:11px;font-family:var(--font-mono);font-weight:500;color:var(--color-text-primary)">'+p.po+'</td>'
-        +'<td style="padding:6px 1.25rem;font-size:11px;color:var(--color-text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px">'+escHtml(p.carrier)+'</td>'
-        +'<td style="padding:6px 1.25rem;font-size:11px;font-family:var(--font-mono);text-align:right;color:var(--color-text-primary)">'+p.prevQty+'</td>'
-        +'<td style="padding:6px 1.25rem;font-size:11px;font-family:var(--font-mono);text-align:right;color:var(--color-text-primary)">'+p.qty+'</td>'
-        +'<td style="padding:6px 1.25rem;font-size:11px;text-align:right">'+dqStr+'</td>'
-        +'<td style="padding:6px 1.25rem">'+sb+'</td>'
-        +'</tr>';
-    });
-    var totDelta=totHoy-totAyer;
-    html+='<tr style="background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary)">'
-      +'<td style="padding:6px 1.25rem;font-size:11px;font-weight:500;color:var(--color-text-primary)">Total</td><td></td>'
-      +'<td style="padding:6px 1.25rem;font-size:11px;font-family:var(--font-mono);text-align:right;font-weight:500">'+totAyer.toLocaleString()+'</td>'
-      +'<td style="padding:6px 1.25rem;font-size:11px;font-family:var(--font-mono);text-align:right;font-weight:500">'+totHoy.toLocaleString()+'</td>'
-      +'<td style="padding:6px 1.25rem;font-size:11px;text-align:right;font-weight:500;color:'+(totDelta<0?'#A32D2D':totDelta>0?'#27500A':'var(--color-text-tertiary)')+'">'+( totDelta===0?'—':(totDelta>0?'▲ +':('▼ '))+Math.abs(totDelta).toLocaleString())+'</td>'
-      +'<td></td></tr>';
-    html+='</tbody></table></div></div>';
-  });
-  html+='</div>';
-  document.getElementById('res-detail').innerHTML=html;
-}
+      +'</div>';
 
-function toggleResDiv(idOrEl){
-  var id=typeof idOrEl==='string'?idOrEl:idOrEl.dataset.did;
-  var el=document.getElementById(id);
-  var arr=document.getElementById('arrrd'+id);
-  if(!el) return;
-  var h=el.style.display==='none';
-  el.style.display=h?'block':'none';
-  if(arr) arr.style.transform=h?'rotate(180deg)':'';
-}
-
-function toggleRB(el){
-  var id=el.getAttribute?el.getAttribute('data-bid'):el;
-  var b=document.getElementById(id);
-  var a=document.getElementById('rarr'+id);
-  if(!b) return;
-  var h=b.style.display==='none';
-  b.style.display=h?'block':'none';
-  if(a) a.textContent=h?'▼':'▶';
-}
-
-function saveNote(po){
-  var el=document.getElementById('note-'+po);
-  if(!el) return;
-  try{ localStorage.setItem('note_'+po, el.value); }catch(e){}
-  el.style.borderColor='var(--ok)';
-  setTimeout(function(){ el.style.borderColor=''; },1500);
-}
-
-function tog(id){
-  EXPANDED[id]=!EXPANDED[id]; renderTable();
-  if(EXPANDED[id]){ var row=FILTERED[parseInt(id.slice(1))]; if(row) setTimeout(function(){ renderNotes(row.po); },50); }
-}
-
-function toggleAll(checked){
-  FILTERED.forEach(function(r){ if(checked) SELECTED[r.po]=true; else delete SELECTED[r.po]; });
-  renderTable();
-}
-function toggleSel(po, checked){
-  if(checked) SELECTED[po]=true; else delete SELECTED[po];
-  var allChk=document.getElementById('chk-all');
-  if(allChk) allChk.checked=FILTERED.length>0&&FILTERED.every(function(r){return !!SELECTED[r.po];});
-  // Update footer count without full re-render
-  var selPOs=Object.keys(SELECTED).filter(function(p){return FILTERED.some(function(r){return r.po===p;});}).length;
-  var tfoot=document.getElementById('tfoot-row');
-  if(tfoot){
-    var firstTd=tfoot.querySelector('td.tl');
-    if(firstTd&&selPOs>0) firstTd.textContent=FILTERED.length+' POs · '+selPOs+' selec.';
-    else if(firstTd) firstTd.textContent=FILTERED.length+' POs';
-  }
-}
-
-function sortBy(col){
-  if(SORT_COL===col) SORT_DIR*=-1; else{SORT_COL=col;SORT_DIR=1;}
-  FILTERED.sort(function(a,b){
-    var av,bv;
-    if(col==='po'){ av=a.po;bv=b.po; return av.localeCompare(bv)*SORT_DIR; }
-    if(col==='div'){ av=a.div||'';bv=b.div||''; return av.localeCompare(bv)*SORT_DIR; }
-    if(col==='ship'){ av=toISO(a.ship)||'';bv=toISO(b.ship)||''; return av.localeCompare(bv)*SORT_DIR; }
-    if(col==='status'){ var so={crit:0,changed:1,new:2,same:3,done:4,gone:5}; av=so[a.status]||9;bv=so[b.status]||9; return (av-bv)*SORT_DIR; }
-    if(col.indexOf('qty')===0){
-      var di=parseInt(col.replace('qty',''));
-      av=a.days[di]?a.days[di].qty:0; bv=b.days[di]?b.days[di].qty:0;
-      return (av-bv)*SORT_DIR;
-    }
-    return 0;
-  });
-  PG=0; renderTable();
-}
-function pgGo(d){PG+=d;renderTable();}
-function renderPg(s,e,t){
-  var mx=Math.ceil((t||1)/PG_SIZE)-1;
-  document.getElementById('pgPrev').disabled=PG<=0;
-  document.getElementById('pgNext').disabled=PG>=mx;
-  document.getElementById('pgInfo').textContent=t?'Página '+(PG+1)+' de '+(mx+1):'';
-  document.getElementById('pgTotal').textContent=t?'Mostrando '+(s+1)+'–'+e+' de '+t+' POs':'';
-}
-
-function exportCSV(selOnly){
-  var rows=selOnly?FILTERED.filter(function(r){return SELECTED[r.po];}):FILTERED;
-  if(!rows.length){alert(selOnly?'No hay filas seleccionadas.':'No hay datos.');return;}
-  
-  var statuses=[
-    {key:'crit',label:'CRITICOS'},
-    {key:'changed',label:'CAMBIOS'},
-    {key:'new',label:'NUEVOS'},
-    {key:'same',label:'SIN CAMBIO'},
-    {key:'done',label:'ENTREGADOS'},
-    {key:'gone',label:'ELIMINADOS'}
-  ];
-  
-  var cols=['PO','División','Región','Ship Date','Carrier','WO','Ship Delay','Ship Advance'];
-  HIST_DATA.forEach(function(d){cols.push(d.label+' Qty');});
-  cols.push('Estado');
-  
-  var lines=['=== REPORTE ITN SEGUIMIENTO ===','Exportado: '+new Date().toLocaleString(),''];
-  
-  statuses.forEach(function(st){
-    var stRows=rows.filter(function(r){return r.status===st.key;});
-    if(!stRows.length) return;
-    lines.push('--- '+st.label+' ('+stRows.length+' POs) ---');
-    lines.push(cols.join(','));
-    stRows.forEach(function(r){
-      var row=[r.po,r.div||'',divRegion(r.div),r.ship||'',r.carrier||'',
-               r.hasWO?'SI':(r.noWO?'NO':''),
-               r.shipDelay?'+'+r.shipDelay+'d':'',
-               r.shipAdvance?'-'+r.shipAdvance+'d':''];
-      r.days.forEach(function(d){row.push(d?Math.round(d.qty):'');});
-      row.push(st.label);
-      lines.push(row.join(','));
-    });
-    lines.push('');
-  });
-  
-  var csv=lines.join('\r\n');
-  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');
-  a.href=url;a.download='ITN_Seguimiento_'+(selOnly?'seleccion_':'')+todayISO()+'.csv';
-  a.style.display='none';document.body.appendChild(a);a.click();
-  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},1000);
-  return;
-}
-</script>
-</body>
-</html>
