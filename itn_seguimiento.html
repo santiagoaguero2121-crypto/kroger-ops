@@ -1025,8 +1025,10 @@ function buildDetail(r){
   // ITN panel
   var itnTotQty=r.itn_prods.reduce(function(s,p){return s+Math.round(p.qty);},0);
   var itnTotAmt=r.itn_amt||0;
-  var itnRows=keys.length?keys.map(function(k){return prodRow(k,itnMap,null,'itn');}).join(''):'<tr><td colspan="4" style="color:var(--muted);font-size:11px;padding:8px">Sin productos</td></tr>';
-  var itnBody=prodTable(itnRows,false,itnTotQty,itnTotAmt,'desc',1,'itn-'+r.cust_po);
+  // Compare ITN against WO if available, else FAC
+  var itnRef=Object.keys(woMap).length?woMap:(Object.keys(facMap).length?facMap:null);
+  var itnRows=keys.length?keys.map(function(k){return prodRow(k,itnMap,itnRef,'itn');}).join(''):'<tr><td colspan="'+(itnRef?'5':'4')+'" style="color:var(--muted);font-size:11px;padding:8px">Sin productos</td></tr>';
+  var itnBody=prodTable(itnRows,!!itnRef,itnTotQty,itnTotAmt,'desc',1,'itn-'+r.cust_po);
 
   // WO panel
   var woTags=r.wo_orders.map(function(o){ return '<span class="rtag wo">'+o.id+'</span>'; }).join(' ');
