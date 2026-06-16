@@ -15,14 +15,14 @@
 }
 body{font-family:system-ui,-apple-system,sans-serif;background:#f0f4f8;color:var(--text);font-size:13px;min-height:100vh}
 .shell{max-width:1500px;margin:0 auto;padding:1.25rem}
-.topbar{display:flex;align-items:center;background:var(--navy);border-radius:10px;padding:0 1.25rem;margin-bottom:1rem;gap:10px;height:48px}
-.topbar h1{font-size:11px;font-weight:800;color:#fff;letter-spacing:.05em;font-family:monospace;flex:1}
+.topbar{display:flex;align-items:center;background:var(--navy);border-radius:10px;padding:.75rem 1.25rem;margin-bottom:1rem;gap:10px}
+.topbar h1{font-size:13px;font-weight:700;color:#fff;letter-spacing:.05em;font-family:monospace;flex:1}
 .tbadge{font-size:10px;color:#9bc4e8;font-family:monospace}
 .bexport{font-size:11px;padding:4px 12px;border-radius:6px;background:#1a5fa8;color:#fff;border:none;cursor:pointer;font-family:inherit;height:28px;font-weight:600}
 .bexport:hover{background:#2e7dd4}
 .ugrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:.5rem}
-.ubox{background:var(--white);border:1.5px dashed var(--border);border-radius:12px;padding:1rem 1.25rem;text-align:center;transition:all .2s;cursor:pointer;display:block}
-.ubox:hover{border-color:var(--mid);background:var(--pale);transform:translateY(-2px)}
+.ubox{background:var(--white);border:1.5px dashed var(--border);border-radius:10px;padding:1rem;text-align:center;transition:all .2s;cursor:pointer}
+.ubox:hover{border-color:var(--mid);background:var(--pale)}
 .ubox.loaded{border-color:var(--ok);border-style:solid;background:var(--okl)}
 .ubox .src{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.35rem}
 .ubox .hint{font-size:11px;color:var(--muted);margin:.25rem 0}
@@ -30,14 +30,13 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#f0f4f8;color:var
 .src.itn{color:var(--blue)}.src.wo{color:#1a6b3a}.src.fac{color:#7a3a00}
 .sbar{font-size:11px;color:var(--muted);padding:.3rem 0;min-height:18px}
 .abar{display:none;background:var(--dangerl);border:1px solid #f09595;border-radius:8px;padding:.6rem 1rem;margin-bottom:.75rem;font-size:12px;color:var(--danger);font-weight:500}
-.stats{display:flex;gap:6px;flex-wrap:nowrap;margin-bottom:1rem;overflow-x:auto}
-.stat{background:var(--white);border:0.5px solid var(--border);border-radius:8px;padding:7px 12px;border-top:3px solid transparent;flex:1;min-width:90px;cursor:pointer;transition:transform .15s;user-select:none}
-.stat:hover{transform:translateY(-2px)}
-.stat.stat-active{outline:2px solid currentColor;transform:translateY(-1px)}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:1rem}
+.stat{background:var(--white);border:0.5px solid var(--border);border-radius:8px;padding:.6rem .9rem;border-top:3px solid transparent}
 .stat.s-ok{border-top-color:var(--ok)}.stat.s-warn{border-top-color:#EF9F27}.stat.s-danger{border-top-color:#E24B4A}
-.stat .sl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem;white-space:nowrap}
-.stat .sv{font-size:18px;font-weight:800;color:var(--navy);font-family:monospace;line-height:1}
-.stat .ss{font-size:9px;color:var(--muted);margin-top:2px;white-space:nowrap}
+.stat.stat-active{outline:2px solid currentColor;transform:translateY(-1px)}
+.stat .sl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem}
+.stat .sv{font-size:20px;font-weight:700;color:var(--navy);font-family:monospace}
+.stat .ss{font-size:10px;color:var(--muted);margin-top:.1rem}
 /* Division summary */
 .divsum{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:1rem}
 .dvcard{background:var(--white);border:0.5px solid var(--border);border-radius:8px;padding:.5rem .75rem;border-left:3px solid transparent}
@@ -95,11 +94,9 @@ tr.exp-main td{background:var(--pale)}
 .amt{font-family:monospace;font-size:11px}
 .mb{font-size:10px;color:#E24B4A;font-weight:700}
 /* diff badge */
-.qdiff{font-family:monospace;font-size:11px;font-weight:800;padding:2px 6px;border-radius:4px;margin-left:3px}
-.qdiff.pos{color:#27500A;background:#C0DD97;border:0.5px solid #97C459}
-.qdiff.neg{color:#791F1F;background:#F7C1C1;border:0.5px solid #F09595}
-.row-warn>td{background:#FFFBF5 !important}
-.row-danger>td{background:#FEF5F5 !important}
+.qdiff{font-family:monospace;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:3px}
+.qdiff.pos{background:var(--dangerl);color:var(--danger)}
+.qdiff.neg{background:var(--dangerl);color:var(--danger)}
 /* fecha cell */
 .fcell{display:inline-flex;flex-direction:column;align-items:center;gap:1px;line-height:1.2}
 .fcell .ficon{font-size:13px}
@@ -135,7 +132,23 @@ tr.exp-main td{background:var(--pale)}
 .stbl td.tl{text-align:left;font-family:inherit}
 .stbl tr:last-child td{border-bottom:none}
 .stbl .tot td{background:#f2f7fd;font-weight:700;color:var(--navy);font-family:monospace}
-.psect{margin-top:5px;border-top:0.5px dashed var(--border);padding-top:5px}
+.psect{margin-top:5px;border-top:0.5px dashed var(--border);padding-top:0}
+.ptbl{width:100%;border-collapse:collapse;font-size:11px}
+.ptbl th{font-size:9px;color:var(--muted);font-weight:700;padding:4px 6px;border-bottom:0.5px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
+.ptbl th:first-child{text-align:left}
+.ptbl th:not(:first-child){text-align:right}
+.ptbl th:hover{background:var(--pale);color:var(--navy)}
+.ptbl th::after{content:'';font-size:8px;margin-left:2px}
+.ptbl th.sort-asc::after{content:' ▲'}
+.ptbl th.sort-desc::after{content:' ▼'}
+.ptbl td{padding:4px 6px;border-bottom:0.5px solid #f5f8fc;font-size:11px;vertical-align:middle}
+.ptbl td:not(:first-child){text-align:right}
+.ptbl tr:last-child td{border-bottom:none}
+.ptbl tr.ptot td{background:#f0f4f8;font-weight:700;border-top:0.5px solid var(--border)}
+.ptbl .pup{font-size:10px;color:var(--muted);font-family:monospace}
+.ptbl .pup.pdiff{color:#E24B4A;font-weight:700;background:#FEF5F5;border-radius:3px;padding:0 3px}
+.ptbl .ptotal{font-family:monospace;font-weight:700;color:var(--navy)}
+.ptbl .pqty2{font-family:monospace;color:var(--navy)}
 .pitem{display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;border-bottom:0.5px solid #f0f4f8;gap:8px}
 .pitem:last-child{border-bottom:none}
 .pname{flex:1;line-height:1.3;color:var(--text)}
@@ -161,7 +174,6 @@ tr.row-canceled td{border-left:3px solid #bbb;opacity:.7}
   <h1>&#9632; KROGER — COMPARADOR ITN · WO · FACTURACIÓN</h1>
   <span class="tbadge" id="badge">0 / 3 archivos cargados</span>
   <button class="bexport" onclick="exportXLSX()" style="display:none" id="btnExport">⬇ Exportar Excel</button>
-  <button class="bexport" onclick="exportDiffs()" style="display:none;background:#9a7010;margin-left:4px" id="btnExportDiff">⬇ Solo diferencias</button>
 </div>
 
 <input type="file" id="inp-itn" accept=".xls,.xlsx" style="display:none" onchange="if(this.files&&this.files[0])loadFile('itn',this.files[0]);this.value=''">
@@ -219,9 +231,10 @@ tr.row-canceled td{border-left:3px solid #bbb;opacity:.7}
     <label>División:</label>
     <select id="f-div" onchange="applyF()"></select>
     <label>Desde:</label>
-    <input type="date" id="f-from" onchange="applyF()">
+    <input type="date" id="f-from" onchange="applyF()" style="font-size:11px;padding:3px 7px;border:0.5px solid var(--border);border-radius:6px;background:var(--white);color:var(--text);height:28px;font-family:inherit">
     <label>Hasta:</label>
-    <input type="date" id="f-to" onchange="applyF()">
+    <input type="date" id="f-to" onchange="applyF()" style="font-size:11px;padding:3px 7px;border:0.5px solid var(--border);border-radius:6px;background:var(--white);color:var(--text);height:28px;font-family:inherit">
+    <button id="btn-hoy" class="bclear" onclick="toggleToday()" style="color:var(--blue);font-weight:700;border-color:var(--blue)">📅 Ver hoy</button>
     <label>PO:</label>
     <input type="text" id="f-po" placeholder="Buscar PO..." oninput="applyF()">
     <button class="bclear" onclick="clearF()">Limpiar</button>
@@ -282,7 +295,7 @@ tr.row-canceled td{border-left:3px solid #bbb;opacity:.7}
 
 <script>
 var PREFIXES = ['100','108','115','128','155','288','308','345','348','358','368','388'];
-var EXCLUDED_CUSTOMERS = ['00329'];
+var EXCLUDED_CUSTOMERS = ['00320','00321','00322','00323','00324','00325','00326','00327','00328','00329'];
 
 var DIVS = {
   '00242':'Smiths','00824':'824','03932':'Kendall','20200':'Frys',
@@ -297,9 +310,9 @@ var DIVS = {
   '00328':'Xenia'
 };
 var PREFIX_DIV = {
-  '155':'Smiths / Kendall','2888':'Frys','308':'Compton','108':'Riverside',
-  '100001':'Las Vegas','1281':'NFC','3881':'King Soopers','3687':'Dillons',
-  '3588':'Dallas','3484':'Houston','3454':'Champ Floral','1157':'Fort Gillem'
+  '100':'Las Vegas','108':'Riverside','115':'Fort Gillem','128':'NFC',
+  '155':'Smiths / Kendall','288':'Frys','308':'Compton','345':'King Soopers',
+  '348':'Dillons','358':'Dallas','368':'Houston','388':'Champ Floral'
 };
 // West divisions
 var WEST_DIVS = ['Riverside','Compton','Frys','Kendall','824','Smiths','Las Vegas','Smiths / Kendall'];
@@ -408,12 +421,15 @@ function parseFile(src, rows){
                sku:String(r[fc(r,/^SKU$/i)]||'').trim(),
                status:String(r[fc(r,/^STATUS$/i)]||'').trim().toUpperCase(),
                carrier:String(r[fc(r,/^CARRIER$/i)]||'').trim(),
+               unit_price:num(r[fc(r,/^B PRICE$/i)]||r[fc(r,/^B_PRICE$/i)]||r[fc(r,/BPRICE/i)]||0),
                div:RWH_DIV[rwh]||'' };
-    }).filter(function(r){ return isKroger(r.po) && String(r.status||'').toUpperCase().indexOf('RECEIV')<0; });
+    }).filter(function(r){ return isKroger(r.po); });
   }
   if(src==='wo'){
     return rows.map(function(r){
       var cod=String(r['cod_customer']||'').trim();
+      var wFinal=num(r[fc(r,/^final$/i)]);
+      var wUpb=num(r[fc(r,/^upb$/i)]);
       return { cust_po:String(r['cust_po']||'').trim(),
                order_id:String(r['OrderId']||'').trim(),
                cod:cod,
@@ -422,19 +438,23 @@ function parseFile(src, rows){
                date:pd(r['Ship_date']),
                desc:String(r['Costsheet Name']||''),
                slot:String(r[fc(r,/^slots?$/i)]||'').trim(),
-               shipper:String(r[fc(r,/^Shipper$/i)]||'').trim() };
+               shipper:String(r[fc(r,/^Shipper$/i)]||'').trim(),
+               unit_price:wFinal&&wUpb?wFinal*wUpb:0 };
     }).filter(function(r){ return isKroger(r.cust_po) && EXCLUDED_CUSTOMERS.indexOf(r.cod)<0; });
   }
   if(src==='fac'){
     return rows.map(function(r){
       var po=cleanPO(String(r[fc(r,/^PO#$/i)]||'').trim());
+      var fFinal=num(r[fc(r,/^final$/i)]);
+      var fUpb=num(r[fc(r,/^upb$/i)]);
       return { po:po,
                invoice:String(r[fc(r,/^Invoice$/i)]||'').trim(),
                qty:num(r[fc(r,/Box No/i)]), amt:num(r[fc(r,/Total By Line/i)]),
                date:pd(r[fc(r,/Ship Miami/i)]),
                desc:String(r[fc(r,/^Detail$/i)]||''),
                slot:String(r[fc(r,/^slots?$/i)]||'').trim(),
-               ship_via:String(r[fc(r,/SHIP VIA/i)]||'').trim() };
+               ship_via:String(r[fc(r,/SHIP VIA/i)]||'').trim(),
+               unit_price:fFinal&&fUpb?fFinal*fUpb:0 };
     }).filter(function(r){ return isKroger(r.po)||isWO(r.po); });
   }
   return [];
@@ -450,8 +470,9 @@ function build(){
     if(r.status==='CANCELED'||r.status==='CANCELLED') itnM[r.po].canceled=true;
     if(r.sku||r.desc){
       var key=r.sku?normalizeKey(r.sku):('desc:'+r.desc.trim().toUpperCase());
-      if(!itnM[r.po].prods[key]) itnM[r.po].prods[key]={qty:0,desc:r.desc,id:r.sku||''};
+      if(!itnM[r.po].prods[key]) itnM[r.po].prods[key]={qty:0,desc:r.desc,id:r.sku||'',unit_price:0};
       itnM[r.po].prods[key].qty+=r.qty;
+      if(r.unit_price) itnM[r.po].prods[key].unit_price=r.unit_price;
     }
     if(r.carrier && itnM[r.po].carriers.indexOf(r.carrier)<0) itnM[r.po].carriers.push(r.carrier);
     if(r.div && !itnM[r.po].div) itnM[r.po].div=r.div;
@@ -464,8 +485,9 @@ function build(){
     if(r.div) woM[r.cust_po].div=r.div;
     if(r.slot||r.desc){
       var key=r.slot?normalizeKey(r.slot):('desc:'+r.desc.trim().toUpperCase());
-      if(!woM[r.cust_po].prods[key]) woM[r.cust_po].prods[key]={qty:0,desc:r.desc,id:r.slot||''};
+      if(!woM[r.cust_po].prods[key]) woM[r.cust_po].prods[key]={qty:0,desc:r.desc,id:r.slot||'',unit_price:0};
       woM[r.cust_po].prods[key].qty+=r.qty;
+      if(r.unit_price) woM[r.cust_po].prods[key].unit_price=r.unit_price;
     }
     if(r.shipper && woM[r.cust_po].shippers.indexOf(r.shipper)<0) woM[r.cust_po].shippers.push(r.shipper);
     var ord=woM[r.cust_po].orders.find(function(o){ return o.id===r.order_id; });
@@ -485,8 +507,9 @@ function build(){
       if(!facM[cpo].date) facM[cpo].date=r.date;
       if(r.slot||r.desc){
         var key=r.slot?normalizeKey(r.slot):('desc:'+r.desc.trim().toUpperCase());
-        if(!facM[cpo].prods[key]) facM[cpo].prods[key]={qty:0,desc:r.desc,id:r.slot||''};
+        if(!facM[cpo].prods[key]) facM[cpo].prods[key]={qty:0,desc:r.desc,id:r.slot||'',unit_price:0};
         facM[cpo].prods[key].qty+=r.qty;
+        if(r.unit_price) facM[cpo].prods[key].unit_price=r.unit_price;
       }
       if(r.ship_via && facM[cpo].ship_vias.indexOf(r.ship_via)<0) facM[cpo].ship_vias.push(r.ship_via);
       var inv=r.invoice||'S/N';
@@ -542,9 +565,9 @@ function build(){
     var dateDiff=false;
     if(hasWO && dateMismatch(iDate,wDate)) dateDiff=true;
 
-    var itnProds=Object.keys(wi.prods).map(function(k){ var p=wi.prods[k]; return{key:k,desc:p.desc,id:p.id,qty:p.qty}; });
-    var woProds=ww?Object.keys(ww.prods).map(function(k){ var p=ww.prods[k]; return{key:k,desc:p.desc,id:p.id,qty:p.qty}; }):[];
-    var facProds=wf?Object.keys(wf.prods).map(function(k){ var p=wf.prods[k]; return{key:k,desc:p.desc,id:p.id,qty:p.qty}; }):[];
+    var itnProds=Object.keys(wi.prods).map(function(k){ var p=wi.prods[k]; return{key:k,desc:p.desc,id:p.id,qty:p.qty,unit_price:p.unit_price||0}; });
+    var woProds=ww?Object.keys(ww.prods).map(function(k){ var p=ww.prods[k]; return{key:k,desc:p.desc,id:p.id,qty:p.qty,unit_price:p.unit_price||0}; }):[];
+    var facProds=wf?Object.keys(wf.prods).map(function(k){ var p=wf.prods[k]; return{key:k,desc:p.desc,id:p.id,qty:p.qty,unit_price:p.unit_price||0}; }):[];
     var invList=wf?Object.keys(wf.invoices).map(function(k){return{inv:k,qty:wf.invoices[k].qty,amt:wf.invoices[k].amt,date:wf.invoices[k].date};}):[];
 
     var canceled=!!wi.canceled;
@@ -602,7 +625,6 @@ function build(){
   buildDivSummary();
   document.getElementById('dash').style.display='block';
   document.getElementById('btnExport').style.display='';
-  document.getElementById('btnExportDiff').style.display='';
   applyF();
   sbar('✓ '+DATA.length+' POs del ITN analizados');
 }
@@ -728,6 +750,9 @@ function applyF(){
 
 function clearF(){
   STAT_FILTER='';
+  HOY_ACTIVE=false;
+  var bh=document.getElementById('btn-hoy');
+  if(bh){bh.style.background='var(--light)';bh.style.color='var(--blue)';}
   document.querySelectorAll('.stats .stat').forEach(function(el){el.classList.remove('stat-active');el.style.opacity='1';});
   ['f-st','f-div','f-reg'].forEach(function(id){document.getElementById(id).value='';});
   ['f-from','f-to','f-po'].forEach(function(id){document.getElementById(id).value='';});
@@ -781,9 +806,14 @@ function renderStats(){
     stat('⚠️ Diferencias',diff,'qty no coincide','s-warn','diff');
 }
 var STAT_FILTER='';
+var HOY_ACTIVE=false;
+
 function toggleStatFilter(key){
   STAT_FILTER=STAT_FILTER===key?'':key;
-  document.querySelectorAll('.stats .stat').forEach(function(el){el.classList.remove('stat-active');el.style.opacity='1';});
+  document.querySelectorAll('.stats .stat').forEach(function(el){
+    el.classList.remove('stat-active');
+    el.style.opacity='1';
+  });
   if(STAT_FILTER){
     document.querySelectorAll('.stats .stat').forEach(function(el){
       var oc=el.getAttribute('onclick')||'';
@@ -793,6 +823,32 @@ function toggleStatFilter(key){
   }
   applyF();
 }
+
+function toggleToday(){
+  HOY_ACTIVE=!HOY_ACTIVE;
+  var btn=document.getElementById('btn-hoy');
+  if(btn){ btn.style.background=HOY_ACTIVE?'var(--blue)':'var(--light)'; btn.style.color=HOY_ACTIVE?'#fff':'var(--blue)'; }
+  if(HOY_ACTIVE){
+    var today=todayISO();
+    var dates=DATA.map(function(r){return r.itn_date;}).filter(Boolean);
+    var isos=dates.map(function(d){return toISO(d);}).filter(function(d){return d>=today;}).sort();
+    var best=isos[0];
+    if(best){
+      var ff=document.getElementById('f-from'); if(ff) ff.value=best;
+      var ft=document.getElementById('f-to'); if(ft) ft.value=best;
+    }
+  } else {
+    var ff=document.getElementById('f-from'); if(ff) ff.value='';
+    var ft=document.getElementById('f-to'); if(ft) ft.value='';
+  }
+  applyF();
+}
+
+function todayISO(){
+  var d=new Date(); 
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
 function stat(l,v,s,c,k){
   var kattr=k?(' onclick="toggleStatFilter(\''+k+'\')"'):'';
   return '<div class="stat '+c+'"'+kattr+'><div class="sl">'+l+'</div><div class="sv">'+v+'</div><div class="ss">'+s+'</div></div>';
@@ -900,7 +956,19 @@ function buildDetail(r){
   r.wo_prods.forEach(function(p){ woMap[p.key]=p; });
   r.fac_prods.forEach(function(p){ facMap[p.key]=p; });
 
-  function prodRow(key, srcMap, refMap){
+  function fmtUp(v){ return v?('$'+v.toFixed(2)):'—'; }
+  function fmtTotal(up,qty){ return (up&&qty)?('$'+(up*qty).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})):'—'; }
+
+  // Get all unit prices per key across sources for diff detection
+  function getUnitPrices(key){
+    var prices={};
+    if(itnMap[key]&&itnMap[key].unit_price) prices.itn=itnMap[key].unit_price;
+    if(woMap[key]&&woMap[key].unit_price) prices.wo=woMap[key].unit_price;
+    if(facMap[key]&&facMap[key].unit_price) prices.fac=facMap[key].unit_price;
+    return prices;
+  }
+
+  function prodRow(key, srcMap, refMap, srcName){
     var p=srcMap[key];
     var ref=refMap?refMap[key]:null;
     var master=allKeys[key];
@@ -908,29 +976,59 @@ function buildDetail(r){
     var qtyDiff=!missing&&ref&&Math.abs(p.qty-ref.qty)>0.5;
     var label=(master&&master.desc)||key;
     var idStr=(master&&master.id)||key;
-    var qty=p?Math.round(p.qty).toLocaleString():'—';
-    var refQty=ref?Math.round(ref.qty):null;
+    var qty=p?Math.round(p.qty):0;
     var diff=(!missing&&ref)?Math.round(p.qty-ref.qty):null;
-    var rs=missing?'background:#fceaea;':(qtyDiff?'background:#fff8e1;':'');
-    var ns=missing?'color:#991f1f;font-weight:600;':(qtyDiff?'color:#9a7010;font-weight:600;':'');
-    var qs=missing?'color:#991f1f;font-weight:700;':(qtyDiff?'color:#9a7010;font-weight:700;':'font-family:monospace;font-weight:700;color:var(--navy);');
-    var idBadge='<span style="font-size:9px;font-family:monospace;background:#f0f4f8;border:0.5px solid var(--border);border-radius:3px;padding:0 4px;color:var(--muted);margin-right:4px;">'+idStr+'</span>';
+    var rs=missing?'background:#fceaea':(qtyDiff?'background:#fff8e1':'');
+    var idBadge='<span style="font-size:9px;font-family:monospace;background:#f0f4f8;border:0.5px solid var(--border);border-radius:3px;padding:0 4px;color:var(--muted);margin-right:4px">'+idStr+'</span>';
     var statusBadge='';
-    if(missing) statusBadge='<span style="font-size:9px;background:#fceaea;border:0.5px solid #f09595;border-radius:3px;padding:0 5px;color:#991f1f;font-weight:700;margin-left:4px;">❌ Faltante</span>';
+    if(missing) statusBadge='<span style="font-size:9px;background:#fceaea;border:0.5px solid #f09595;border-radius:3px;padding:0 5px;color:#991f1f;font-weight:700;margin-left:4px">❌ Faltante</span>';
     else if(qtyDiff){
       var sign=diff>0?'+':'';
-      statusBadge='<span style="font-size:9px;background:#fff8e1;border:0.5px solid #fad27a;border-radius:3px;padding:0 5px;color:#9a7010;font-weight:700;margin-left:4px;">⚠️ '+sign+diff+'</span>';
+      statusBadge='<span style="font-size:9px;background:#F7C1C1;border:0.5px solid #F09595;border-radius:3px;padding:0 5px;color:#791F1F;font-weight:700;margin-left:4px">⚠️ '+sign+diff+'</span>';
     }
-    return '<div class="pitem" style="'+rs+'">'
-      +'<span class="pname" style="'+ns+'">'+idBadge+label+statusBadge+'</span>'
-      +'<span class="pqty" style="'+qs+'">'+qty+(missing?'':' un.')+'</span>'
-      +'</div>';
+    // Unit price diff detection
+    var up=p?p.unit_price:0;
+    var prices=getUnitPrices(key);
+    var allPrices=Object.values(prices).filter(function(v){return v>0;});
+    var priceDiff=allPrices.length>1&&allPrices.some(function(v){return Math.abs(v-allPrices[0])>0.01;});
+    var upCls=priceDiff?'pup pdiff':'pup';
+    var upTip=priceDiff?(' title="ITN:$'+(prices.itn||'—')+' WO:$'+(prices.wo||'—')+' FAC:$'+(prices.fac||'—')+'"'):'';
+    var upStr=fmtUp(up);
+    var totalStr=fmtTotal(up,qty);
+    var qtyStr=missing?'—':qty.toLocaleString();
+    var diffCell=ref?('<td>'+(diff===null||Math.abs(diff)<1?'<span style="color:var(--muted)">—</span>':('<span style="font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700;background:#F7C1C1;color:#791F1F;border:0.5px solid #F09595">'+(diff>0?'+':'')+diff+'</span>'))+'</td>'):'';
+    return '<tr style="'+rs+'">'
+      +'<td><span class="pname">'+idBadge+label+statusBadge+'</span></td>'
+      +'<td><span class="'+upCls+'"'+upTip+'>'+upStr+'</span></td>'
+      +'<td class="pqty2">'+qtyStr+'</td>'
+      +'<td><span class="ptotal">'+totalStr+'</span></td>'
+      +diffCell
+      +'</tr>';
+  }
+
+  function prodTable(rows, hasRef, totQty, totAmt, sortKey, sortDir, panelId){
+    // Build sortable header
+    var pid=panelId.replace(/[^a-zA-Z0-9_-]/g,'_');
+    var thUp='<th data-panel-id="'+pid+'" data-sort="up" onclick="sortPanel(this)">P.Unit</th>';
+    var thQty='<th data-panel-id="'+pid+'" data-sort="qty" onclick="sortPanel(this)">Qty</th>';
+    var thTotal='<th data-panel-id="'+pid+'" data-sort="total" onclick="sortPanel(this)">Total</th>';
+    var thDesc='<th data-panel-id="'+pid+'" data-sort="desc" onclick="sortPanel(this)" style="text-align:left">Descripción</th>';
+    var thDif=hasRef?'<th>Dif.</th>':'';
+    var thDesc='<th data-panel-id="'+pid+'" data-sort="desc" onclick="sortPanel(this)" style="text-align:left">Descripción</th>';
+    var thDif=hasRef?'<th>Dif.</th>':'';
+    var totalRow='<tr class="ptot"><td>Total</td><td></td><td class="pqty2">'+totQty.toLocaleString()+'</td><td class="ptotal">$'+totAmt.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'+(hasRef?'<td></td>':'')+'</tr>';
+    var pid2=panelId.replace(/[^a-zA-Z0-9_-]/g,'_');
+    return '<table class="ptbl" data-panel="'+pid2+'"><thead><tr>'+thDesc+thUp+thQty+thTotal+thDif+'</tr></thead><tbody>'+rows+'</tbody>'+totalRow+'</table>';
   }
 
   // ITN panel — reference is itself, no diff highlighting
-  var itnBody=keys.length
-    ? keys.map(function(k){ return prodRow(k, itnMap, null); }).join('')
-    : '<div class="nodata">Sin productos</div>';
+  // ITN panel
+  var itnTotQty=r.itn_prods.reduce(function(s,p){return s+Math.round(p.qty);},0);
+  var itnTotAmt=r.itn_amt||0;
+  // Compare ITN against WO if available, else FAC
+  var itnRef=Object.keys(woMap).length?woMap:(Object.keys(facMap).length?facMap:null);
+  var itnRows=keys.length?keys.map(function(k){return prodRow(k,itnMap,itnRef,'itn');}).join(''):'<tr><td colspan="'+(itnRef?'5':'4')+'" style="color:var(--muted);font-size:11px;padding:8px">Sin productos</td></tr>';
+  var itnBody=prodTable(itnRows,!!itnRef,itnTotQty,itnTotAmt,'desc',1,'itn-'+r.cust_po);
 
   // WO panel
   var woTags=r.wo_orders.map(function(o){ return '<span class="rtag wo">'+o.id+'</span>'; }).join(' ');
@@ -947,7 +1045,10 @@ function buildDetail(r){
     });
     if(r.wo_orders.length>1) woBody+='<tr class="tot"><td class="tl">Total</td><td>'+fN(r.wo_qty)+'</td><td>'+fA(r.wo_amt)+'</td></tr>';
     woBody+='</table><div class="psect">';
-    woBody+=keys.length ? keys.map(function(k){ return prodRow(k, woMap, itnMap); }).join('') : '<div class="nodata">Sin productos</div>';
+    var woTotQty=r.wo_prods.reduce(function(s,p){return s+Math.round(p.qty);},0);
+    var woTotAmt=r.wo_amt||0;
+    var woRows=keys.length?keys.map(function(k){return prodRow(k,woMap,itnMap,'wo');}).join(''):'<tr><td colspan="5" style="color:var(--muted);font-size:11px;padding:8px">Sin productos</td></tr>';
+    woBody+=prodTable(woRows,true,woTotQty,woTotAmt,'desc',1,'wo-'+r.cust_po);
     woBody+='</div>';
   }
 
@@ -966,7 +1067,10 @@ function buildDetail(r){
     });
     if(r.fac_invoices.length>1) facBody+='<tr class="tot"><td class="tl">Total</td><td>'+fN(r.fac_qty)+'</td><td>'+fA(r.fac_amt)+'</td></tr>';
     facBody+='</table><div class="psect">';
-    facBody+=keys.length ? keys.map(function(k){ return prodRow(k, facMap, itnMap); }).join('') : '<div class="nodata">Sin productos</div>';
+    var facTotQty=r.fac_prods.reduce(function(s,p){return s+Math.round(p.qty);},0);
+    var facTotAmt=r.fac_amt||0;
+    var facRows=keys.length?keys.map(function(k){return prodRow(k,facMap,itnMap,'fac');}).join(''):'<tr><td colspan="5" style="color:var(--muted);font-size:11px;padding:8px">Sin productos</td></tr>';
+    facBody+=prodTable(facRows,true,facTotQty,facTotAmt,'desc',1,'fac-'+r.cust_po);
     facBody+='</div>';
   }
 
@@ -979,16 +1083,30 @@ function buildDetail(r){
     +'</div></div>';
 }
 
+function sortPanel(thEl){
+  var col=thEl.getAttribute('data-sort');
+  var pid=thEl.getAttribute('data-panel-id');
+  var tbl=document.querySelector('[data-panel="'+pid+'"]');
+  if(!tbl) return;
+  var tbody=tbl.querySelector('tbody');
+  if(!tbody) return;
+  var rows=Array.from(tbody.querySelectorAll('tr:not(.ptot)'));
+  var dir=thEl.classList.contains('sort-asc')?-1:1;
+  tbl.querySelectorAll('th').forEach(function(t){t.classList.remove('sort-asc','sort-desc');});
+  thEl.classList.add(dir===1?'sort-asc':'sort-desc');
+  rows.sort(function(a,b){
+    var av,bv;
+    if(col==='desc'){ av=(a.cells[0]?a.cells[0].textContent:'').trim(); bv=(b.cells[0]?b.cells[0].textContent:'').trim(); return av.localeCompare(bv)*dir; }
+    if(col==='up'){ av=parseFloat((a.cells[1]?a.cells[1].textContent:'')||0)||0; bv=parseFloat((b.cells[1]?b.cells[1].textContent:'')||0)||0; }
+    if(col==='qty'){ av=parseFloat((a.cells[2]?a.cells[2].textContent:'')||0)||0; bv=parseFloat((b.cells[2]?b.cells[2].textContent:'')||0)||0; }
+    if(col==='total'){ av=parseFloat(((a.cells[3]?a.cells[3].textContent:'')||'').replace(/[$,]/g,'')||0)||0; bv=parseFloat(((b.cells[3]?b.cells[3].textContent:'')||'').replace(/[$,]/g,'')||0)||0; }
+    return (av-bv)*dir;
+  });
+  var totRow=tbody.querySelector('.ptot');
+  rows.forEach(function(r){tbody.insertBefore(r,totRow);});
+}
 function sbar(msg){ document.getElementById('sbar').textContent=msg; }
 
-function exportDiffs(){
-  var prev=FILTERED;
-  var diffs=DATA.filter(function(r){return !r.flags.includes('ok');});
-  var prevF=FILTERED;
-  FILTERED=diffs;
-  exportXLSX();
-  FILTERED=prevF;
-}
 function exportXLSX(){
   if(!FILTERED.length){ alert('No hay datos para exportar.'); return; }
   function csvval(v){
