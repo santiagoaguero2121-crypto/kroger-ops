@@ -123,7 +123,7 @@ body{background:#f0f4f8;color:var(--text);min-height:100vh}
       <button class="chip cx" onclick="setReg('Xenia',this)">🌿 Xenia</button>
       <span class="lbl" style="margin-left:8px">División:</span>
       <span id="dchips"></span>
-      <input class="sinp" id="srch" placeholder="🔍 Buscar item..." oninput="render()">
+      <input class="sinp" id="srch" placeholder="🔍 Buscar item..." oninput="render();if(EXEC)buildExec();">
       <button class="chip exec" onclick="toggleExec(this)" style="margin-left:auto">📊 Vista ejecutiva</button>
       <button class="chip" onclick="resetF()">✕ Limpiar</button>
     </div>
@@ -135,9 +135,18 @@ body{background:#f0f4f8;color:var(--text);min-height:100vh}
 </div>
 <script>
 // ── MAPS ──
-var COD_DIV={'82800':'Compton','83800':'Riverside','20200':'Frys','00242':'Smiths',
-  '03932':'Kendall','00018':'Xenia/NFC','18000':'Xenia/NFC','29206':'King Soopers',
-  '22232':'Las Vegas','00232':'Las Vegas','00212':'Las Vegas','00824':'824'};
+var COD_DIV={
+  '82800':'Compton','83800':'Riverside','20200':'Frys',
+  '00242':'Smiths','03932':'Kendall',
+  '00018':'Xenia/NFC','18000':'Xenia/NFC',
+  '29206':'King Soopers','00244':'Houston','00245':'Houston',
+  '22232':'Las Vegas','00232':'Las Vegas','00212':'Las Vegas',
+  '00824':'824',
+  '01120':'Fort Gillem','00329':'Fort Gillem',
+  '00238':'Dallas','00327':'Dallas',
+  '00334':'Champ Floral',
+  '00245':'Dillons','00323':'Houston','00324':'King Soopers'
+};
 var PFX_DIV={'100':'Las Vegas','108':'Riverside','115':'Fort Gillem','128':'Xenia/NFC',
   '155':'Smiths','288':'Frys','308':'Compton','345':'King Soopers',
   '348':'Dillons','358':'Dallas','368':'Houston','388':'Champ Floral'};
@@ -330,7 +339,7 @@ function setW(w,b){CW=w;document.querySelectorAll('#wchips .chip').forEach(funct
 function setReg(r,b){CR=r;CD='all';document.querySelectorAll('.fbar .chip[onclick*="setReg"]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');renderDChips();render();}
 function setD(d,b){CD=d;document.querySelectorAll('#dchips .chip').forEach(function(x){x.classList.remove('on');});b.classList.add('on');render();}
 function resetF(){CR='all';CD='all';document.getElementById('srch').value='';document.querySelectorAll('.fbar .chip[onclick*="setReg"]').forEach(function(x){x.classList.remove('on');});document.querySelector('.fbar .chip[onclick*="\'all\'"]').classList.add('on');renderDChips();render();}
-function toggleExec(b){EXEC=!EXEC;b.classList.toggle('on',EXEC);document.getElementById('exec').style.display=EXEC?'block':'none';document.getElementById('dash').style.display=EXEC?'none':'block';document.getElementById('kpis').style.display=EXEC?'none':(DATA.length?'grid':'none');if(EXEC) buildExec();}
+function toggleExec(b){EXEC=!EXEC;b.classList.toggle('on',EXEC);document.getElementById('exec').style.display=EXEC?'block':'none';document.getElementById('dash').style.display=EXEC?'none':'block';document.getElementById('kpis').style.display=EXEC?'none':(DATA.length?'grid':'none');buildExec();}
 
 // ── BUILD MAP ──
 function buildMap(rows){
@@ -480,7 +489,9 @@ function buildExec(){
   var pws=allPWs(),ls=pws.map(function(p){return p.label;});
   var cl='PD'+CP+'W'+CW;
   var dw={},rw={},tw={};
+  var q=(document.getElementById('srch').value||'').toLowerCase();
   DATA.forEach(function(r){
+    if(q&&r.lbl.toLowerCase().indexOf(q)<0) return;
     if(!dw[r.div]) dw[r.div]={};
     dw[r.div][r.pw.label]=(dw[r.div][r.pw.label]||0)+r.qty;
     if(!rw[r.reg]) rw[r.reg]={};
