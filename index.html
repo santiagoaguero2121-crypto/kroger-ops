@@ -93,6 +93,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#eef2f7;color:var
 .badge-ok{background:var(--okl);color:var(--ok)}
 .badge-warn{background:#FAEEDA;color:#633806}
 .badge-dim{background:#f0f0f0;color:#888}
+.hcard.ok-purple{border-top:3px solid #7C3AED}
 .hcard-title{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:.3rem}
 .hcard-desc{font-size:11px;color:var(--muted);line-height:1.6}
 .hcard-footer{margin-top:.85rem;padding-top:.75rem;border-top:0.5px solid #f0f4f8;display:flex;align-items:center;justify-content:space-between}
@@ -207,6 +208,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#eef2f7;color:var
       <button class="nav-mod active" id="btn-home"><i class="ti ti-home" style="font-size:13px" aria-hidden="true"></i> Inicio</button>
       <button class="nav-mod" id="btn-comp"><i class="ti ti-chart-bar" style="font-size:13px" aria-hidden="true"></i> Comparador</button>
       <button class="nav-mod" id="btn-seg"><i class="ti ti-calendar-stats" style="font-size:13px" aria-hidden="true"></i> Seguimiento ITN <span class="nav-crit-badge" id="nav-crit-badge" style="display:none">!</span></button>
+      <button class="nav-mod" id="btn-wo"><i class="ti ti-chart-arrows" style="font-size:13px" aria-hidden="true"></i> Análisis WO</button>
     </div>
     <div class="nav-right">
       <div class="nav-clock" id="nav-clock"></div>
@@ -264,13 +266,13 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#eef2f7;color:var
           <span class="hcard-arrow">›</span>
         </div>
       </div>
-      <div class="hcard dim">
+      <div class="hcard ok-purple" id="card-wo" style="cursor:pointer">
         <div class="hcard-head">
-          <div class="hcard-icon" style="background:#f0f0f0"><i class="ti ti-package" style="font-size:22px;color:#aaa" aria-hidden="true"></i></div>
-          <span class="hcard-badge badge-dim">Próximamente</span>
+          <div class="hcard-icon" style="background:#EDE9FE"><i class="ti ti-chart-arrows" style="font-size:22px;color:#7C3AED" aria-hidden="true"></i></div>
+          <span class="hcard-badge badge-ok">Nuevo</span>
         </div>
-        <div class="hcard-title">Módulo 3</div>
-        <div class="hcard-desc">En desarrollo para el equipo de operaciones florales.</div>
+        <div class="hcard-title">Análisis WO</div>
+        <div class="hcard-desc">WO por período Kroger · región · división · item. Tendencia semana a semana.</div>
         <div class="hcard-footer"><span class="hcard-footer-txt">Sin fecha estimada</span></div>
       </div>
     </div>
@@ -288,6 +290,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#eef2f7;color:var
         <div class="panel-title"><i class="ti ti-circle-check" style="font-size:14px;color:#1a5fa8" aria-hidden="true"></i> Estado del sistema</div>
         <div class="status-item"><div class="status-dot" style="background:#1a6b3a"></div><div class="status-info"><strong>Comparador Kroger</strong><span>ITN vs WO vs Facturación · Sin errores</span></div><span class="status-badge sb-ok">OK</span></div>
         <div class="status-item"><div class="status-dot" style="background:#EF9F27"></div><div class="status-info"><strong>Seguimiento ITN</strong><span>Historial 7 días · Críticos y cambios activos</span></div><span class="status-badge sb-warn">Alerta</span></div>
+        <div class="status-item"><div class="status-dot" style="background:#7C3AED"></div><div class="status-info"><strong>Análisis WO</strong><span>Períodos Kroger · Por región y división</span></div><span class="status-badge sb-ok">Nuevo</span></div>
         <div class="status-item"><div class="status-dot" style="background:#1a5fa8"></div><div class="status-info"><strong>Usuarios activos</strong><span id="status-users">7 cuentas configuradas</span></div><span class="status-badge sb-ok">OK</span></div>
       </div>
     </div>
@@ -302,6 +305,9 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#eef2f7;color:var
 
   <!-- SEGUIMIENTO -->
   <iframe id="mod-seg" class="iframe-frame" src="itn_seguimiento.html" style="display:none"></iframe>
+
+  <!-- ANÁLISIS WO -->
+  <iframe id="mod-wo" class="iframe-frame" src="kroger_wo_analisis.html" style="display:none"></iframe>
 
   <!-- MI CUENTA -->
   <div id="mod-cuenta" style="display:none"><div class="mod-wrap">
@@ -411,11 +417,11 @@ updateClock();
 setInterval(updateClock,30000);
 
 function showMod(m){
-  ['mod-home','mod-comp','mod-seg','mod-cuenta','mod-admin'].forEach(function(id){
+  ['mod-home','mod-comp','mod-seg','mod-wo','mod-cuenta','mod-admin'].forEach(function(id){
     var el=document.getElementById(id);
     if(el)el.style.display='none';
   });
-  ['btn-home','btn-comp','btn-seg'].forEach(function(id){
+  ['btn-home','btn-comp','btn-seg','btn-wo'].forEach(function(id){
     var el=document.getElementById(id);
     if(el)el.classList.remove('active');
   });
@@ -600,6 +606,8 @@ document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('pw-new').addEventListener('input',checkStrength);
   document.getElementById('card-comp').addEventListener('click',function(){showMod('comp');});
   document.getElementById('card-seg').addEventListener('click',function(){showMod('seg');});
+  document.getElementById('btn-wo').addEventListener('click',function(){showMod('wo');});
+  document.getElementById('card-wo').addEventListener('click',function(){showMod('wo');});
 });
 </script>
 </body>
