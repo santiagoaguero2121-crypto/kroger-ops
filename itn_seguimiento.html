@@ -831,6 +831,17 @@ function statusBadge(status, dQ, daysOverdue, noCar){
   return '<span class="delta zero">✅</span>'+nc;
 }
 
+function renderPg(start,end,total){
+  var maxPg=Math.ceil((total||1)/PG_SIZE)-1;
+  document.getElementById('pgPrev').disabled=PG<=0;
+  document.getElementById('pgNext').disabled=PG>=maxPg;
+  document.getElementById('pgInfo').textContent=total?'Página '+(PG+1)+' de '+(maxPg+1):'';
+  document.getElementById('pgTotal').textContent=total?'Mostrando '+(start+1)+'–'+end+' de '+total+' POs':'';
+}
+function pgGo(dir){
+  PG+=dir;
+  renderTable();
+}
 function renderTable(){
   var body=document.getElementById('tbody');
   var cols=4+HIST_DATA.length+2;
