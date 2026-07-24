@@ -209,6 +209,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#eef2f7;color:var
       <button class="nav-mod" id="btn-comp"><i class="ti ti-chart-bar" style="font-size:13px" aria-hidden="true"></i> Comparador</button>
       <button class="nav-mod" id="btn-seg"><i class="ti ti-calendar-stats" style="font-size:13px" aria-hidden="true"></i> Seguimiento ITN <span class="nav-crit-badge" id="nav-crit-badge" style="display:none">!</span></button>
       <button class="nav-mod" id="btn-wo"><i class="ti ti-chart-arrows" style="font-size:13px" aria-hidden="true"></i> Análisis WO</button>
+      <button class="nav-mod" id="btn-log"><i class="ti ti-truck-delivery" style="font-size:13px" aria-hidden="true"></i> Logística</button>
     </div>
     <div class="nav-right">
       <div class="nav-clock" id="nav-clock"></div>
@@ -275,6 +276,18 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#eef2f7;color:var
         <div class="hcard-desc">WO por período Kroger · región · división · item. Tendencia semana a semana.</div>
         <div class="hcard-footer"><span class="hcard-footer-txt">Sin fecha estimada</span></div>
       </div>
+      <div class="hcard" style="border-top:3px solid #EF9F27" id="card-log">
+        <div class="hcard-head">
+          <div class="hcard-icon" style="background:#FAEEDA"><i class="ti ti-truck-delivery" style="font-size:22px;color:#EF9F27" aria-hidden="true"></i></div>
+          <span class="hcard-badge badge-ok">Nuevo</span>
+        </div>
+        <div class="hcard-title">Logística</div>
+        <div class="hcard-desc">Guías de rastreo por carrier y PO. Estado de envío, tránsito y entrega.</div>
+        <div class="hcard-footer">
+          <span class="hcard-footer-txt"><i class="ti ti-clock" style="font-size:11px;vertical-align:-1px" aria-hidden="true"></i> Listo para usar</span>
+          <span class="hcard-arrow">›</span>
+        </div>
+      </div>
     </div>
 
     <div class="bottom-grid">
@@ -308,6 +321,9 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#eef2f7;color:var
 
   <!-- ANÁLISIS WO -->
   <iframe id="mod-wo" class="iframe-frame" src="kroger_wo_analisis.html" style="display:none"></iframe>
+
+  <!-- LOGÍSTICA -->
+  <iframe id="mod-log" class="iframe-frame" src="logistica.html" style="display:none"></iframe>
 
   <!-- MI CUENTA -->
   <div id="mod-cuenta" style="display:none"><div class="mod-wrap">
@@ -417,11 +433,11 @@ updateClock();
 setInterval(updateClock,30000);
 
 function showMod(m){
-  ['mod-home','mod-comp','mod-seg','mod-wo','mod-cuenta','mod-admin'].forEach(function(id){
+  ['mod-home','mod-comp','mod-seg','mod-wo','mod-log','mod-cuenta','mod-admin'].forEach(function(id){
     var el=document.getElementById(id);
     if(el)el.style.display='none';
   });
-  ['btn-home','btn-comp','btn-seg','btn-wo'].forEach(function(id){
+  ['btn-home','btn-comp','btn-seg','btn-wo','btn-log'].forEach(function(id){
     var el=document.getElementById(id);
     if(el)el.classList.remove('active');
   });
@@ -608,6 +624,8 @@ document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('card-seg').addEventListener('click',function(){showMod('seg');});
   document.getElementById('btn-wo').addEventListener('click',function(){showMod('wo');});
   document.getElementById('card-wo').addEventListener('click',function(){showMod('wo');});
+  document.getElementById('btn-log').addEventListener('click',function(){showMod('log');});
+  document.getElementById('card-log').addEventListener('click',function(){showMod('log');});
 });
 </script>
 </body>
