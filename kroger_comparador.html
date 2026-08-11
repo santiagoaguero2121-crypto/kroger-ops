@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Kroger — Comparador</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="shared-store.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -342,6 +343,17 @@ function cleanPO(po){ return String(po).replace(/\s+Ships.*$/i,'').trim(); }
 function normalizeCarrier(v){ return String(v||'').trim().toUpperCase(); }
 
 var FILES = {itn:null, wo:null, fac:null};
+
+// Al abrir esta página, revisa si ITN, WO o Facturación ya se subieron
+// en otro módulo (o en una carga anterior de este mismo) y los carga
+// automáticamente, sin que la persona tenga que volver a subirlos.
+(function autoLoadShared(){
+  if(!window.DKShared) return;
+  ['itn','wo','fac'].forEach(function(src){
+    var s=DKShared.get(src);
+    if(s) processFile(src, s.arrayBuffer, s.name, false);
+  });
+})();
 var DATA = [], FILTERED = [], EXPANDED = {};
 var SORT_COL = '', SORT_DIR = 1;
 var PG = 0, PG_SIZE = 50;
@@ -350,9 +362,17 @@ function loadFile(src, file){
   sbar('Leyendo '+src.toUpperCase()+'...');
   document.getElementById('fn-'+src).textContent = file.name;
   var reader = new FileReader();
-  reader.onload = function(e){
+  reader.onload = function(e){ processFile(src, e.target.result, file.name, true); };
+  reader.readAsArrayBuffer(file);
+}
+
+// buffer: ArrayBuffer del archivo · filename: nombre a mostrar
+// fromUser=true cuando lo sube la persona aquí mismo (se guarda para
+// que otros módulos lo usen); fromUser=false cuando se auto-carga un
+// archivo que ya subieron en otro módulo.
+function processFile(src, buffer, filename, fromUser){
     try{
-      var wb = XLSX.read(e.target.result, {type:'array', cellDates:true});
+      var wb = XLSX.read(buffer, {type:'array', cellDates:true});
       var ws = wb.Sheets[wb.SheetNames[0]];
       var rows = null;
       for(var h=0; h<=6; h++){
@@ -366,6 +386,8 @@ function loadFile(src, file){
       if(!rows) rows = XLSX.utils.sheet_to_json(ws, {defval:''});
       FILES[src] = parseFile(src, rows);
       document.getElementById('box-'+src).classList.add('loaded');
+      document.getElementById('fn-'+src).textContent = filename + (fromUser ? '' : ' (compartido desde otro modulo)');
+      if(window.DKShared && fromUser) DKShared.save(src, {name:filename}, buffer);
       var n = Object.values(FILES).filter(Boolean).length;
       document.getElementById('badge').textContent = n+' / 3 archivos cargados';
       var dbg = src.toUpperCase()+' — '+FILES[src].length+' válidos';
@@ -381,8 +403,6 @@ function loadFile(src, file){
       sbar(dbg);
       if(FILES.itn) build();
     } catch(err){ sbar('Error '+src+': '+err.message); }
-  };
-  reader.readAsArrayBuffer(file);
 }
 
 function normalizeKey(v){
