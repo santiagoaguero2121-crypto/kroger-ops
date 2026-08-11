@@ -222,16 +222,6 @@ tr.row-gone td{border-left:3px solid #bbb;opacity:.55}
   </div>
 
   <div class="filters">
-    <label>Estado:</label>
-    <select id="f-show" onchange="applyF()">
-      <option value="all">Todos</option>
-      <option value="crit">🚨 Críticos</option>
-      <option value="changed">⚠️ Con cambios</option>
-      <option value="new">🆕 Nuevos</option>
-      <option value="done">✅ Entregados</option>
-      <option value="gone">❌ Eliminados</option>
-      <option value="same">Sin cambio</option>
-    </select>
     <label>Ship Date:</label>
     <div style="position:relative;display:inline-block" id="ship-dd-wrap">
       <button id="ship-dd-btn" onclick="toggleShipDD()" style="font-size:11px;padding:4px 10px;border:0.5px solid var(--border);border-radius:6px;background:var(--white);color:var(--text);height:28px;cursor:pointer;font-family:inherit;min-width:150px;display:flex;align-items:center;justify-content:space-between;gap:6px">
@@ -258,9 +248,12 @@ tr.row-gone td{border-left:3px solid #bbb;opacity:.55}
     <select id="f-reg" onchange="onRegionChange()">
       <option value="">Todas</option>
       <option value="West">🌊 West</option>
+      <option value="NFC">⭐ NFC</option>
+      <option value="Houston">🤠 Houston</option>
       <option value="East">🌄 East</option>
-      <option value="Xenia">⭐ Xenia</option>
     </select>
+    <label>Origen:</label>
+    <select id="f-origin" onchange="applyF()"></select>
     <label>División:</label>
     <select id="f-div" onchange="applyF()"></select>
     <label>PO:</label>
@@ -304,21 +297,22 @@ var DIVS = {
   '22232':'Las Vegas','82800':'Compton','83800':'Riverside',
   '00018':'NFC','18000':'NFC','29206':'King Soopers',
   '00212':'Dillons','00238':'Dallas','00245':'Houston',
-  '00244':'Champ Floral','01120':'Fort Gillem','00328':'Xenia'
+  '00244':'Houston Champion','01120':'Fort Gillem','00328':'Xenia'
 };
 var PREFIX_DIV = {
   '155':'Smiths / Kendall','2888':'Frys','308':'Compton','108':'Riverside',
   '100001':'Las Vegas','1281':'NFC','3881':'King Soopers','3882':'King Soopers','3687':'Dillons',
-  '3588':'Dallas','3484':'Houston','3454':'Champ Floral','1157':'Fort Gillem'
+  '3588':'Dallas','3484':'Houston','3454':'Houston Champion','1157':'Fort Gillem'
 };
 var WEST_DIVS = ['Riverside','Compton','Frys','Kendall','824','Smiths','Las Vegas','Smiths / Kendall'];
-var XENIA_DIVS = ['Xenia','NFC'];
+var NFC_DIVS = ['Xenia','NFC'];
+var HOUSTON_DIVS = ['Dillons','Houston','Houston Champion'];
 var RWH_DIV = {
   // Exact matches from comparador
   'Kroger Kendal North':'Kendall','Kroger Ralphs Riverside':'Riverside',
   'Kroger Ralphs Compton WHS':'Compton','Dillons Produce Whse':'Dillons',
   'Kroger Frys Tolleson':'Frys','Kroger Fort Gillem GA':'Fort Gillem',
-  'Champion Floral Whse - Houston':'Houston','Kroger East Dallas Whs':'Dallas',
+  'Champion Floral Whse - Houston':'Houston Champion','Kroger East Dallas Whs':'Dallas',
   'King Sooper Floral Denver':'King Soopers','Las Vegas Fresh Center':'Las Vegas',
   'Kroger NFC Whs':'NFC','Kroger Smiths':'Smiths','Kroger East Houston Whs':'Houston',
   // Abbreviated from seguimiento file
@@ -328,9 +322,37 @@ var RWH_DIV = {
   'KR-RalComptn':'Compton','Frys Whse':'Frys',
   'Dill-Produce':'Dillons','KSFloral-Den':'King Soopers',
   'LAS VEGAS':'Las Vegas','NFC WHS':'NFC',
-  'Houston Whs':'Houston','Champ-Floral':'Champ Floral',
-  'Champ Floral':'Champ Floral','ROUNDYS':'Smiths'
+  'Houston Whs':'Houston','Champ-Floral':'Houston Champion',
+  'Champ Floral':'Houston Champion','ROUNDYS':'Smiths'
 };
+// PO prefix -> división Houston, se aplica sin importar el texto de RWH
+var HOUSTON_PREFIX_DIV = { '368':'Dillons', '345':'Houston Champion', '348':'Houston' };
+// SW/H (bodega de origen del envío) -> sub-división mostrada dentro de West / NFC
+var SWH_SUBDIV = {
+  'calexico pg3':'Calexico',
+  'passion west':'Vista',
+  'ks carlsbad':'Vista',
+  'passion':'Miami',
+  'xenia pg':'Xenia'
+};
+// Estilo visual por origen: emoji (rápido de escanear) + color de acento (pill sutil).
+var ORIGIN_META = {
+  'Calexico':{emoji:'🌵',bg:'#FFF1DC',fg:'#8a4b00',dot:'#E8890C'},
+  'Vista':{emoji:'🌲',bg:'#E4F5E9',fg:'#1a6b3a',dot:'#2F9E5B'},
+  'Miami':{emoji:'🌴',bg:'#E3F6FA',fg:'#0e6e82',dot:'#17A2B8'},
+  'Xenia':{emoji:'⭐',bg:'#F1E7FB',fg:'#6a3d9a',dot:'#8E5FC9'}
+};
+function originBadge(origin){
+  if(!origin) return '';
+  var m=ORIGIN_META[origin]||{emoji:'',bg:'var(--pale)',fg:'var(--muted)',dot:'var(--muted)'};
+  return '<span class="dtag" style="background:'+m.bg+';color:'+m.fg+';display:inline-flex;align-items:center;gap:4px">'
+    +'<span style="width:6px;height:6px;border-radius:50%;background:'+m.dot+';display:inline-block;flex:none"></span>'
+    +(m.emoji?m.emoji+' ':'')+origin+'</span>';
+}
+function originOptionLabel(origin){
+  var m=ORIGIN_META[origin];
+  return (m&&m.emoji?m.emoji+' ':'')+origin;
+}
 
 function divFromRWH(rwh){
   if(!rwh) return '';
@@ -339,11 +361,26 @@ function divFromRWH(rwh){
   for(var k in RWH_DIV){ if(r.toLowerCase().indexOf(k.toLowerCase())>=0) return RWH_DIV[k]; }
   return r;
 }
-function divRegion(div){
-  if(!div) return '';
-  if(XENIA_DIVS.indexOf(div)>=0) return 'Xenia';
-  if(WEST_DIVS.indexOf(div)>=0) return 'West';
+function houstonDivFromPO(po){
+  po = String(po||'').replace(/\xa0/g,'').trim();
+  for(var p in HOUSTON_PREFIX_DIV){ if(po.indexOf(p)===0) return HOUSTON_PREFIX_DIV[p]; }
+  return '';
+}
+function regionFromWhDiv(whDiv){
+  if(!whDiv) return '';
+  if(NFC_DIVS.indexOf(whDiv)>=0) return 'NFC';
+  if(WEST_DIVS.indexOf(whDiv)>=0) return 'West';
+  if(HOUSTON_DIVS.indexOf(whDiv)>=0) return 'Houston';
   return 'East';
+}
+// Origen del envío (Calexico/Vista para West, Miami/Xenia para NFC), en base al SW/H.
+// Esto es un dato ADICIONAL a la división de bodega destino (whDiv) — no la reemplaza,
+// así Frys/Compton/Riverside/Kendall/etc. siguen viéndose como división en West.
+function originFor(region, swh){
+  if(region!=='West'&&region!=='NFC') return '';
+  var s=String(swh||'').replace(/\xa0/g,'').trim().toLowerCase();
+  if(SWH_SUBDIV[s]) return SWH_SUBDIV[s];
+  return region==='NFC' ? 'Miami' : 'Vista'; // sin SW/H reconocido -> bodega principal
 }
 function isKroger(po){
   po = String(po||'').replace(/\xa0/g,'').trim();
@@ -413,6 +450,7 @@ function loadITN(file){
       var colST   = fc(sample,/^STATUS$/i);
       var colSHP  = fc(sample,/^SHIP.DATE$/i)||fc(sample,/SHIP/i);
       var colRWH  = fc(sample,/^RWH$/i)||fc(sample,/^RW\/H$/i);
+      var colSWH  = fc(sample,/^SW.H$/i)||fc(sample,/^SW\/H$/i)||fc(sample,/SOURCE/i);
       var colCAR  = fc(sample,/^CARRIER$/i);
       var colSKU  = fc(sample,/^SKU$/i);
       var colDESC = fc(sample,/^DESC$/i);
@@ -429,13 +467,24 @@ function loadITN(file){
         var amt=num(r[colAMT]);
         var ship=cleanVal(r[colSHP]);
         var rwh=cleanVal(r[colRWH]);
+        var swh=cleanVal(r[colSWH]);
         var carrier=cleanVal(r[colCAR]);
         var sku=cleanVal(r[colSKU]);
         var desc=cleanVal(r[colDESC]);
-        var div=divFromRWH(rwh)||divFromPO(po);
-        if(!poMap[po]) poMap[po]={qty:0,amt:0,div:div,carrier:carrier,ship:ship,prods:{}};
+        var houstonDiv=houstonDivFromPO(po);
+        var whDiv=houstonDiv||divFromRWH(rwh);
+        var region=houstonDiv?'Houston':regionFromWhDiv(whDiv);
+        // West tiene varias bodegas destino (Frys, Compton, Riverside, Kendall...) -> esas se
+        // conservan como división, y Calexico/Vista queda aparte en "origin".
+        // NFC solo tenía una bodega destino (NFC), así que ahí SÍ reemplazamos la división
+        // directamente por Miami/Xenia (no se pierde nada, y así se diferencian en el filtro principal).
+        var div = region==='NFC' ? originFor(region,swh) : whDiv;
+        var origin = region==='West' ? originFor(region,swh) : '';
+        if(!poMap[po]) poMap[po]={qty:0,amt:0,div:div,region:region,origin:origin,carrier:carrier,ship:ship,prods:{}};
         poMap[po].qty+=qty; poMap[po].amt+=amt;
         if(!poMap[po].div&&div) poMap[po].div=div;
+        if(!poMap[po].region&&region) poMap[po].region=region;
+        if(!poMap[po].origin&&origin) poMap[po].origin=origin;
         if(!poMap[po].carrier&&carrier) poMap[po].carrier=carrier;
         if(!poMap[po].ship&&ship) poMap[po].ship=ship;
         if(sku||desc){
@@ -574,20 +623,37 @@ function buildUI(){
   divSel.innerHTML='<option value="">Todas</option>';
   Object.keys(divSet).sort().forEach(function(d){ divSel.innerHTML+='<option value="'+d+'">'+d+'</option>'; });
 
+  // Origin filter (Calexico/Vista/Miami/Xenia)
+  var originSet={};
+  HIST_DATA.forEach(function(d){ Object.values(d.pos).forEach(function(p){if(p.origin)originSet[p.origin]=true;}); });
+  var originSel=document.getElementById('f-origin');
+  originSel.innerHTML='<option value="">Todos</option>';
+  Object.keys(originSet).sort().forEach(function(o){ originSel.innerHTML+='<option value="'+o+'">'+originOptionLabel(o)+'</option>'; });
+
   buildTable();
 }
 
 function onRegionChange(){
   var reg=(document.getElementById('f-reg')||{value:''}).value||'';
-  var divSet={};
-  HIST_DATA.forEach(function(d){ Object.values(d.pos).forEach(function(p){if(p.div)divSet[p.div]=true;}); });
+  var divSet={}; var divRegionMap={}; var originSet={};
+  HIST_DATA.forEach(function(d){ Object.values(d.pos).forEach(function(p){
+    if(p.div){divSet[p.div]=true;divRegionMap[p.div]=p.region;}
+    if(p.origin&&(!reg||p.region===reg)) originSet[p.origin]=true;
+  }); });
   var divSel=document.getElementById('f-div');
   var prev=divSel.value;
   divSel.innerHTML='<option value="">Todas</option>';
   Object.keys(divSet).sort().forEach(function(d){
-    if(!reg||divRegion(d)===reg) divSel.innerHTML+='<option value="'+d+'">'+d+'</option>';
+    if(!reg||divRegionMap[d]===reg) divSel.innerHTML+='<option value="'+d+'">'+d+'</option>';
   });
   if(prev&&divSel.querySelector('option[value="'+prev+'"]')) divSel.value=prev;
+
+  var originSel=document.getElementById('f-origin');
+  var prevO=originSel.value;
+  originSel.innerHTML='<option value="">Todos</option>';
+  Object.keys(originSet).sort().forEach(function(o){ originSel.innerHTML+='<option value="'+o+'">'+originOptionLabel(o)+'</option>'; });
+  if(prevO&&originSel.querySelector('option[value="'+prevO+'"]')) originSel.value=prevO;
+
   applyF();
 }
 
@@ -595,9 +661,11 @@ function buildTable(){
   var allPOs={};
   HIST_DATA.forEach(function(d){
     Object.keys(d.pos).forEach(function(po){
-      if(!allPOs[po]) allPOs[po]={div:'',carrier:'',ship:'',prods:{}};
+      if(!allPOs[po]) allPOs[po]={div:'',region:'',origin:'',carrier:'',ship:'',prods:{}};
       var p=d.pos[po];
       if(!allPOs[po].div&&p.div) allPOs[po].div=p.div;
+      if(!allPOs[po].region&&p.region) allPOs[po].region=p.region;
+      if(!allPOs[po].origin&&p.origin) allPOs[po].origin=p.origin;
       if(!allPOs[po].carrier&&p.carrier) allPOs[po].carrier=p.carrier;
       if(!allPOs[po].ship&&p.ship) allPOs[po].ship=p.ship;
       // Merge prods
@@ -625,7 +693,7 @@ function buildTable(){
       var uniqueShips=ships.filter(function(s,i,a){return a.indexOf(s)===i;});
       if(uniqueShips.length>1) shipChanged=true;
     }
-    var r={po:po,div:allPOs[po].div,carrier:allPOs[po].carrier,ship:allPOs[po].ship,shipChanged:shipChanged,
+    var r={po:po,div:allPOs[po].div,region:allPOs[po].region,origin:allPOs[po].origin,carrier:allPOs[po].carrier,ship:allPOs[po].ship,shipChanged:shipChanged,
            prods:allPOs[po].prods,days:days,lQ:lQ,pQ:pQ,dQ:dQ,
            isNew:isNew,isGone:isGone,changed:changed};
     r.status=getStatus(r);
@@ -724,12 +792,12 @@ function buildTable(){
   // Thead
   var th1='<tr>';
   th1+='<th rowspan="2" style="width:32px;text-align:center;vertical-align:middle"><input type="checkbox" id="chk-all" onchange="toggleAll(this.checked)" title="Seleccionar todo"></th>';
-  th1+='<th rowspan="2" class="tl sortable" style="min-width:140px;vertical-align:bottom" ondblclick="sortBy(&quot;po&quot;)">PO</th>';
-  th1+='<th rowspan="2" class="tl sortable" style="vertical-align:bottom" ondblclick="sortBy(&quot;div&quot;)">División</th>';
-  th1+='<th rowspan="2" class="tl sortable" style="vertical-align:bottom" ondblclick="sortBy(&quot;ship&quot;)">Ship Date</th>';
-  th1+='<th rowspan="2" class="tl" style="vertical-align:bottom">Carrier</th>';
-  HIST_DATA.forEach(function(d,i){ th1+='<th class="sortable" style="text-align:center;background:#e6f1fb;color:#185fa5" ondblclick="sortBy(&quot;qty'+i+'&quot;)">'+d.label+'</th>'; });
-  th1+='<th rowspan="2" class="sortable" style="min-width:80px;vertical-align:bottom" ondblclick="sortBy(&quot;status&quot;)">Estado</th>';
+  th1+='<th id="th-po" rowspan="2" class="tl sortable" style="min-width:140px;vertical-align:bottom" ondblclick="sortBy(&quot;po&quot;)">PO</th>';
+  th1+='<th id="th-div" rowspan="2" class="tl sortable" style="vertical-align:bottom" ondblclick="sortBy(&quot;div&quot;)">Origen / División</th>';
+  th1+='<th id="th-ship" rowspan="2" class="tl sortable" style="vertical-align:bottom" ondblclick="sortBy(&quot;ship&quot;)">Ship Date</th>';
+  th1+='<th id="th-carrier" rowspan="2" class="tl sortable" style="vertical-align:bottom" ondblclick="sortBy(&quot;carrier&quot;)">Carrier</th>';
+  HIST_DATA.forEach(function(d,i){ th1+='<th id="th-qty'+i+'" class="sortable" style="text-align:center;background:#e6f1fb;color:#185fa5" ondblclick="sortBy(&quot;qty'+i+'&quot;)">'+d.label+'</th>'; });
+  th1+='<th id="th-status" rowspan="2" class="sortable" style="min-width:80px;vertical-align:bottom" ondblclick="sortBy(&quot;status&quot;)">Estado</th>';
   th1+='<th rowspan="2" style="width:40px"></th></tr>';
   var th2='<tr><th class="day-hdr" style="font-size:9px;color:var(--muted)" colspan="5">doble clic en columna = ordenar</th>';
   HIST_DATA.forEach(function(){ th2+='<th class="day-hdr">Qty</th>'; });
@@ -761,11 +829,11 @@ function toggleStatFilter(key){
   applyF();
 }
 function applyF(){
-  var show=document.getElementById('f-show').value;
   var shipF=null; // multi-select handled by SHIP_SELECTED
   var dayF=(document.getElementById('f-day')||{value:''}).value||'';
   var regF=(document.getElementById('f-reg')||{value:''}).value||'';
   var divF=document.getElementById('f-div').value;
+  var originF=(document.getElementById('f-origin')||{value:''}).value||'';
   var poF=document.getElementById('f-po').value.toLowerCase();
   var fromF=(document.getElementById('f-from')||{value:''}).value||'';
   var toF=(document.getElementById('f-to')||{value:''}).value||'';
@@ -775,10 +843,10 @@ function applyF(){
     if(STAT_FILTER==='nota'&&getNoteSummary(r.po).active===0) return false;
     if(STAT_FILTER==='nocar'&&!r.noCar) return false;
     if(STAT_FILTER&&STAT_FILTER!=='nota'&&STAT_FILTER!=='nocar'&&r.status!==STAT_FILTER) return false;
-    if(show&&r.status!==show) return false;
     if(SHIP_SELECTED.size>0&&!SHIP_SELECTED.has(r.ship)) return false;
-    if(regF&&divRegion(r.div)!==regF) return false;
+    if(regF&&r.region!==regF) return false;
     if(divF&&r.div!==divF) return false;
+    if(originF&&r.origin!==originF) return false;
     if(poF&&r.po.toLowerCase().indexOf(poF)<0) return false;
     if(dayF){ var di=HIST_DATA.findIndex(function(d){return d.date===dayF;}); if(di<0||!r.days[di]) return false; }
     return true;
@@ -794,15 +862,17 @@ function clearF(){
   HOY_ACTIVE=false;var bh=document.getElementById('btn-hoy');if(bh){bh.style.background='var(--light)';bh.style.color='var(--blue)';}
   var ff=document.getElementById('f-from');if(ff)ff.value='';
   var ft=document.getElementById('f-to');if(ft)ft.value='';
-  ['f-day','f-reg','f-div'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
-  var fs=document.getElementById('f-show');if(fs)fs.value='';;
+  ['f-day','f-reg','f-div','f-origin'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   SHIP_SELECTED.clear(); buildShipDD(Array.from(document.querySelectorAll('#ship-dd-items div')).map(function(el){var s=el.querySelectorAll('span')[0];return s?s.textContent.trim():'';}));
   document.getElementById('f-po').value='';
-  var divSet={};
-  HIST_DATA.forEach(function(d){Object.values(d.pos).forEach(function(p){if(p.div)divSet[p.div]=true;});});
+  var divSet={}; var originSet={};
+  HIST_DATA.forEach(function(d){Object.values(d.pos).forEach(function(p){if(p.div)divSet[p.div]=true;if(p.origin)originSet[p.origin]=true;});});
   var ds=document.getElementById('f-div');
   ds.innerHTML='<option value="">Todas</option>';
   Object.keys(divSet).sort().forEach(function(d){ds.innerHTML+='<option value="'+d+'">'+d+'</option>';});
+  var os=document.getElementById('f-origin');
+  os.innerHTML='<option value="">Todos</option>';
+  Object.keys(originSet).sort().forEach(function(o){os.innerHTML+='<option value="'+o+'">'+originOptionLabel(o)+'</option>';});
   applyF();
 }
 
@@ -843,6 +913,11 @@ function pgGo(dir){
   renderTable();
 }
 function renderTable(){
+  updateSortIndicators();
+  if(SORT_COL){
+    var cmp=sortComparator(SORT_COL);
+    FILTERED=FILTERED.slice().sort(function(a,b){ return cmp(a,b)*SORT_DIR; });
+  }
   var body=document.getElementById('tbody');
   var cols=4+HIST_DATA.length+2;
   if(!FILTERED.length){body.innerHTML='<tr><td colspan="'+cols+'" class="erow">No hay registros.</td></tr>';renderPg(0,0,0);return;}
@@ -858,7 +933,8 @@ function renderTable(){
     var r=page[i];
     var id='r'+(start+i);
     var exp=!!EXPANDED[id];
-    var div=r.div?'<span class="dtag">'+r.div+'</span>':'—';
+    var div=r.origin?originBadge(r.origin)+' ':'';
+    div+=r.div?(ORIGIN_META[r.div]?originBadge(r.div):'<span class="dtag">'+r.div+'</span>'):(r.origin?'':'—');
     var sc=shipClass(r.ship);
     var shipCell=r.ship?'<span class="ship-date '+sc+'">'+r.ship+'</span>':'<span class="qty-empty">—</span>';
     var carrierCell=r.carrier?r.carrier:'<span class="pend">Pendiente</span>';
@@ -1173,8 +1249,8 @@ function buildResumen(){
 
   var activeRows=_allRows.filter(function(r){return r.status!=='done';});
   var days2=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
-  var regIcons={West:'🌊',Mountain:'⛰️',South:'☀️',NFC:'🏪'};
-  var regOrder=['West','Mountain','South','NFC'];
+  var regIcons={West:'🌊',NFC:'⭐',Houston:'🤠',East:'🌄'};
+  var regOrder=['West','NFC','Houston','East'];
 
   // Build ship-date based index for week strip
   var shipDates={};
@@ -1193,7 +1269,7 @@ function buildResumen(){
   // Build region->ship->division->POs index
   var regions={};
   activeRows.forEach(function(r){
-    var reg=divRegion(r.div)||'Otra';
+    var reg=r.region||'Otra';
     var ship=r.ship||'Sin fecha';
     var div=r.div||'Sin división';
     if(!regions[reg]) regions[reg]={};
@@ -1204,7 +1280,7 @@ function buildResumen(){
     var qty=ld?Math.round(ld.qty):0,pqty=pd?Math.round(pd.qty):0;
     regions[reg][ship].qty+=qty; regions[reg][ship].prevQty+=pqty;
     regions[reg][ship].divs[div].qty+=qty; regions[reg][ship].divs[div].prevQty+=pqty;
-    regions[reg][ship].divs[div].pos.push({po:r.po,carrier:r.carrier||'',qty:qty,prevQty:pqty,status:r.status,dq:r.dQ||0});
+    regions[reg][ship].divs[div].pos.push({po:r.po,carrier:r.carrier||'',origin:r.origin||'',qty:qty,prevQty:pqty,status:r.status,dq:r.dQ||0});
   });
 
   // Week strip HTML
@@ -1280,8 +1356,8 @@ function selectShipDay(elOrShip){
   var sd=el._shipDates[ship];
   if(!sd) return;
   var days2=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
-  var regIcons={West:'🌊',Mountain:'⛰️',South:'☀️',NFC:'🏪'};
-  var regOrder=['West','Mountain','South','NFC'];
+  var regIcons={West:'🌊',NFC:'⭐',Houston:'🤠',East:'🌄'};
+  var regOrder=['West','NFC','Houston','East'];
 
   // Highlight selected day card
   document.querySelectorAll('[id^="daycard-"]').forEach(function(c){
@@ -1369,9 +1445,12 @@ function selectRegion(reg, ship){
     var statusPill=nC?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#FCEBEB;color:#791F1F;font-weight:500">'+nC+' cancel</span>'
       :nW?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#FAEEDA;color:#633806;font-weight:500">'+nW+' cambios</span>'
       :'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#EAF3DE;color:#27500A;font-weight:500">ok</span>';
+    var divMeta=ORIGIN_META[div];
+    var divPillBg=divMeta?divMeta.bg:'#E6F1FB', divPillFg=divMeta?divMeta.fg:'#0C447C';
+    var divPillTxt=(divMeta&&divMeta.emoji?divMeta.emoji+' ':'')+div;
     html+='<div style="border-bottom:0.5px solid var(--color-border-tertiary)">'
       +'<div style="display:flex;align-items:center;gap:10px;padding:.75rem 1.25rem;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleResDiv(this)" data-did="'+did+'">'
-      +'<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:#E6F1FB;color:#0C447C;font-weight:500;min-width:100px;text-align:center">'+div+'</span>'
+      +'<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:'+divPillBg+';color:'+divPillFg+';font-weight:500;min-width:100px;text-align:center">'+divPillTxt+'</span>'
       +'<span style="font-size:11px;color:var(--color-text-secondary)"><b style="color:var(--color-text-primary)">'+dd.pos.length+'</b> POs · <b style="color:var(--color-text-primary)">'+dd.qty.toLocaleString()+'</b> cajas</span>'
       +'<span style="font-size:11px;font-weight:500;color:'+deltaCol+'">'+deltaStr+'</span>'
       +'<span style="margin-left:auto">'+statusPill+'</span>'
@@ -1397,8 +1476,9 @@ function selectRegion(reg, ship){
         :p.status==='new'?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#EAF3DE;color:#27500A;font-weight:500">add</span>'
         :p.status==='changed'?'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#FAEEDA;color:#633806;font-weight:500">cambio</span>'
         :'<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:#EAF3DE;color:#27500A;font-weight:500">ok</span>';
+      var originTag=p.origin?' '+originBadge(p.origin):'';
       html+='<tr style="background:'+rowBg+';border-bottom:0.5px solid var(--color-border-tertiary)">'
-        +'<td style="padding:5px 1.25rem;font-size:11px;font-family:var(--font-mono);font-weight:500;color:var(--color-text-primary)">'+p.po+'</td>'
+        +'<td style="padding:5px 1.25rem;font-size:11px;font-family:var(--font-mono);font-weight:500;color:var(--color-text-primary)">'+p.po+originTag+'</td>'
         +'<td style="padding:5px 1.25rem;font-size:11px;font-family:var(--font-mono);text-align:right">'+p.prevQty+'</td>'
         +'<td style="padding:5px 1.25rem;font-size:11px;font-family:var(--font-mono);text-align:right">'+p.qty+'</td>'
         +'<td style="padding:5px 1.25rem;font-size:11px;text-align:right">'+dqStr+'</td>'
@@ -1501,16 +1581,61 @@ function sortBy(col){
   if(SORT_COL===col){ SORT_DIR*=-1; } else { SORT_COL=col; SORT_DIR=1; }
   renderTable();
 }
+var STATUS_ORDER={crit:0,changed:1,new:2,same:3,done:4,gone:5};
+function sortComparator(col){
+  if(col.indexOf('qty')===0){
+    var idx=parseInt(col.slice(3),10);
+    return function(a,b){
+      var av=a.days[idx]?a.days[idx].qty:-1, bv=b.days[idx]?b.days[idx].qty:-1;
+      return av-bv;
+    };
+  }
+  if(col==='po') return function(a,b){ return a.po.localeCompare(b.po); };
+  if(col==='div') return function(a,b){
+    var av=(a.origin?a.origin+' ':'')+(a.div||''), bv=(b.origin?b.origin+' ':'')+(b.div||'');
+    return av.localeCompare(bv);
+  };
+  if(col==='ship') return function(a,b){
+    var av=toISO(a.ship)||'', bv=toISO(b.ship)||'';
+    if(!av&&!bv) return 0;
+    if(!av) return 1; // sin fecha al final
+    if(!bv) return -1;
+    return av<bv?-1:av>bv?1:0;
+  };
+  if(col==='carrier') return function(a,b){
+    var av=a.carrier||'', bv=b.carrier||'';
+    if(!av&&!bv) return 0;
+    if(!av) return 1; // pendientes al final
+    if(!bv) return -1;
+    return av.localeCompare(bv);
+  };
+  if(col==='status') return function(a,b){ return (STATUS_ORDER[a.status]||99)-(STATUS_ORDER[b.status]||99); };
+  return function(){ return 0; };
+}
+function updateSortIndicators(){
+  var labels={po:'PO','div':'Origen / División',ship:'Ship Date',carrier:'Carrier',status:'Estado'};
+  Object.keys(labels).forEach(function(k){
+    var el=document.getElementById('th-'+k);
+    if(!el) return;
+    el.textContent=labels[k]+(SORT_COL===k?(SORT_DIR>0?' ▲':' ▼'):'');
+  });
+  HIST_DATA.forEach(function(d,i){
+    var el=document.getElementById('th-qty'+i);
+    if(!el) return;
+    var col='qty'+i;
+    el.textContent=d.label+(SORT_COL===col?(SORT_DIR>0?' ▲':' ▼'):'');
+  });
+}
 
 function exportCSV(selOnly){
   var rows=selOnly?FILTERED.filter(function(r){return SELECTED[r.po];}):FILTERED;
   if(!rows.length){ alert('No hay datos para exportar.'); return; }
-  var cols=['PO','Division','Region','Ship Date','Carrier','WO','Estado','Qty'];
+  var cols=['PO','Origen','Division','Region','Ship Date','Carrier','WO','Estado','Qty'];
   HIST_DATA.forEach(function(d){ cols.push(d.label); });
   var lines=[cols.join(',')];
   rows.forEach(function(r){
     var lastDay=r.days[r.days.length-1];
-    var line=[r.po,r.div,divRegion(r.div)||'',r.ship||'',r.carrier||'',
+    var line=[r.po,r.origin||'',r.div,r.region||'',r.ship||'',r.carrier||'',
       WO_POS[r.po]?'Si':'No',r.status,lastDay?Math.round(lastDay.qty):''];
     r.days.forEach(function(d){ line.push(d?Math.round(d.qty):''); });
     lines.push(line.map(function(v){ return '"'+(v+'').replace(/"/g,'""')+'"'; }).join(','));
