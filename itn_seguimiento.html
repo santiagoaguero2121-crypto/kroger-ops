@@ -5,7 +5,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Seguimiento Diario ITN</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="shared-store.js?v=2"></script>
+<script src="shared-store.js?v=4"></script>
+<script>
+// Aplica el tema (claro/oscuro) lo antes posible, para que no haya parpadeo,
+// y se mantiene sincronizado en vivo con el cambio hecho desde el Inicio.
+(function(){
+  function applyTheme(t){ document.documentElement.setAttribute('data-theme', t==='dark'?'dark':'light'); }
+  try{ applyTheme(localStorage.getItem('dk_theme')||'light'); }catch(e){}
+  window.addEventListener('storage', function(e){ if(e.key==='dk_theme') applyTheme(e.newValue||'light'); });
+})();
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -13,8 +22,16 @@
   --border:#c8ddf0;--text:#0f1c2e;--muted:#4a6a8a;--white:#fff;
   --ok:#1a6b3a;--okl:#e2f5eb;--warn:#9a7010;--warnl:#fff8e1;
   --danger:#991f1f;--dangerl:#fceaea;--crit:#7a0000;--critl:#ffe5e5;
+  --bg:#f0f4f8;--rowhover:#f7faff;--rowborder:#edf3fa;
 }
-body{font-family:system-ui,-apple-system,sans-serif;background:#f0f4f8;color:var(--text);font-size:13px;min-height:100vh}
+[data-theme="dark"]{
+  --bg:#0a121e;--white:#121d2e;--pale:#0f1a2b;--border:#243a54;
+  --text:#e7edf5;--muted:#8aa4bf;--light:#1c3350;
+  --okl:#123524;--dangerl:#3a1414;--warnl:#332608;--critl:#3a1414;
+  --rowhover:#152238;--rowborder:#1c2c42;
+}
+*{transition:background-color .2s ease,border-color .2s ease,color .2s ease}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh}
 .shell{max-width:1600px;margin:0 auto;padding:1.25rem}
 .topbar{display:flex;align-items:center;background:var(--navy);border-radius:10px;padding:.75rem 1.25rem;margin-bottom:1rem;gap:10px;flex-wrap:wrap}
 .topbar h1{font-size:13px;font-weight:700;color:#fff;letter-spacing:.05em;font-family:monospace;flex:1}
@@ -54,12 +71,12 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#f0f4f8;color:var
 table{width:100%;border-collapse:collapse;font-size:11.5px}
 thead th{padding:6px 10px;font-size:10px;font-weight:700;letter-spacing:.05em;text-align:right;white-space:nowrap;border-bottom:1.5px solid var(--border);background:var(--pale);color:var(--muted);position:sticky;top:0;z-index:2}
 thead th.tl{text-align:left}
-.day-hdr{padding:4px 10px;text-align:right;border-bottom:0.5px solid var(--border);background:#f0f6ff;color:var(--blue);font-size:9px;font-weight:700;white-space:nowrap}
+.day-hdr{padding:4px 10px;text-align:right;border-bottom:0.5px solid var(--border);background:var(--light);color:var(--blue);font-size:9px;font-weight:700;white-space:nowrap}
 .day-hdr.tl{text-align:left}
-td{padding:5px 10px;border-bottom:0.5px solid #edf3fa;text-align:right;vertical-align:middle}
+td{padding:5px 10px;border-bottom:0.5px solid var(--rowborder);text-align:right;vertical-align:middle}
 td.tl{text-align:left}
 td.tc{text-align:center}
-tr:hover td{background:#f7faff}
+tr:hover td{background:var(--rowhover)}
 tr.row-ok td{border-left:3px solid var(--ok)}
 tr.row-warn td{border-left:3px solid #EF9F27}
 tr.row-new td{border-left:3px solid var(--blue)}
@@ -73,9 +90,9 @@ tr.row-gone td{border-left:3px solid #bbb;opacity:.55}
 .delta{font-family:monospace;font-weight:700;font-size:11px;padding:1px 6px;border-radius:4px}
 .delta.up{background:var(--dangerl);color:var(--danger)}
 .delta.down{background:var(--okl);color:var(--ok)}
-.delta.zero{background:#f0f4f8;color:var(--muted)}
+.delta.zero{background:var(--bg);color:var(--muted)}
 .delta.new{background:var(--light);color:var(--blue)}
-.delta.done{background:#f0f0f0;color:#888}
+.delta.done{background:var(--bg);color:#888}
 .delta.crit{background:var(--critl);color:#c00;font-weight:900}
 .delta.gone{background:#f5f5f5;color:#999}
 .delta.add{background:var(--okl);color:var(--ok);font-weight:900}
@@ -86,12 +103,12 @@ tr.row-gone td{border-left:3px solid #bbb;opacity:.55}
 .ship-today{color:var(--ok);font-weight:700}
 .ship-future{color:var(--muted)}
 /* detail */
-.drow td{padding:0!important;border-left:none!important;background:#fafcff!important}
+.drow td{padding:0!important;border-left:none!important;background:var(--pale)!important}
 .dinner{padding:.75rem 1rem 1rem;border-top:1px dashed var(--border)}
 .det-tbl{width:100%;border-collapse:collapse;font-size:11px}
 .det-tbl th{font-size:10px;color:var(--muted);font-weight:700;padding:3px 8px;border-bottom:0.5px solid var(--border);text-align:right;background:var(--pale)}
 .det-tbl th.tl{text-align:left}
-.det-tbl td{padding:4px 8px;border-bottom:0.5px solid #f0f4f8;text-align:right}
+.det-tbl td{padding:4px 8px;border-bottom:0.5px solid var(--rowborder);text-align:right}
 .det-tbl td.tl{text-align:left}
 .det-tbl tr:last-child td{border-bottom:none}
 .nota-row-border td:first-child{border-left:3px solid #7C3AED !important}
@@ -132,14 +149,14 @@ tr.row-gone td{border-left:3px solid #bbb;opacity:.55}
 .nota-alert{background:#F5F3FF;border:1px solid #C4B5FD;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:none;align-items:center;gap:10px}
 .nota-alert-text{flex:1;font-size:11px;color:#4C1D95;line-height:1.5}
 .nota-item{background:#F5F3FF;border:0.5px solid #C4B5FD;border-radius:8px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:flex-start;gap:8px}
-.nota-item.resuelta{background:#f0f4f8;border-color:#c8ddf0;opacity:.65}
+.nota-item.resuelta{background:var(--bg);border-color:var(--border);opacity:.65}
 .nota-item.resuelta .nota-txt{text-decoration:line-through;color:#a0b4c8}
-.nota-check{width:16px;height:16px;border-radius:4px;border:1.5px solid #7C3AED;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:1px;background:#fff;font-size:10px;transition:all .15s}
+.nota-check{width:16px;height:16px;border-radius:4px;border:1.5px solid #7C3AED;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:1px;background:var(--white);font-size:10px;transition:all .15s}
 .nota-check.checked{background:#1a6b3a;border-color:#1a6b3a;color:#fff}
 .nota-txt{font-size:11px;color:#4C1D95;line-height:1.5}
 .nota-date{font-size:9px;color:#a0b4c8;margin-top:2px}
 .nota-new-wrap{display:flex;gap:6px;margin-top:6px;align-items:flex-end}
-.nota-new-wrap textarea{flex:1;padding:6px 8px;border:0.5px solid #C4B5FD;border-radius:6px;font-size:11px;font-family:inherit;resize:none;min-height:36px;background:#fff;color:#4C1D95;outline:none}
+.nota-new-wrap textarea{flex:1;padding:6px 8px;border:0.5px solid #C4B5FD;border-radius:6px;font-size:11px;font-family:inherit;resize:none;min-height:36px;background:var(--white);color:var(--text);outline:none}
 .nota-new-wrap textarea:focus{border-color:#7C3AED}
 .nota-new-wrap button{padding:5px 10px;background:#7C3AED;color:#fff;border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;height:36px}
 .nota-new-wrap button:hover{background:#6D28D9}
@@ -178,6 +195,11 @@ tr.row-gone td{border-left:3px solid #bbb;opacity:.55}
   <button class="bbtn red" onclick="clearHistory()">🗑 Limpiar historial</button>
 </div>
 
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;font-size:12px;padding:8px 10px;background:var(--pale,#f2f7fd);border:1px solid var(--border,#c8ddf0);border-radius:8px">
+  <label for="date-itn" style="font-weight:700">📅 Fecha de este ITN:</label>
+  <input type="date" id="date-itn" style="padding:4px 8px;border:1px solid var(--border,#c8ddf0);border-radius:6px;font-size:12px">
+  <span style="color:var(--muted,#4a6a8a)">Usa esta fecha (no se detecta sola). Cámbiala antes de subir un archivo de otro día.</span>
+</div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.25rem">
 <input type="file" id="inp-itn" accept=".xls,.xlsx" style="display:none"
   onchange="if(this.files&&this.files[0])loadITN(this.files[0]);this.value=''">
@@ -422,6 +444,10 @@ var SELECTED={};
   try{ var r=localStorage.getItem(HIST_KEY); if(r) HIST_DATA=JSON.parse(r); }catch(e){}
   if(!Array.isArray(HIST_DATA)) HIST_DATA=[];
   if(HIST_DATA.length>0) buildUI();
+  try{
+    var dEl=document.getElementById('date-itn');
+    if(dEl && !dEl.value) dEl.value=todayISO();
+  }catch(e){}
   autoLoadShared();
 })();
 
@@ -431,7 +457,7 @@ function autoLoadShared(){
   if(!window.DKShared) return;
   try{
     var sItn=DKShared.get('itn');
-    if(sItn) processITN(sItn.arrayBuffer, sItn.name, false);
+    if(sItn) processITN(sItn.arrayBuffer, sItn.name, false, sItn.date);
     var sWo=DKShared.get('wo');
     if(sWo) processWO(sWo.arrayBuffer, sWo.name, false);
   }catch(e){ console.warn('autoLoadShared error', e); }
@@ -439,7 +465,7 @@ function autoLoadShared(){
   // otro módulo mientras esta página sigue abierta (sin recargar), se
   // actualiza sola al instante.
   try{
-    DKShared.onChange('itn', function(s){ processITN(s.arrayBuffer, s.name, false); });
+    DKShared.onChange('itn', function(s){ processITN(s.arrayBuffer, s.name, false, s.date); });
     DKShared.onChange('wo',  function(s){ processWO(s.arrayBuffer, s.name, false); });
   }catch(e){ console.warn('onChange error', e); }
 }
@@ -451,7 +477,11 @@ function loadITN(file){
   sbar('Leyendo '+file.name+'...');
   document.getElementById('fn-itn').textContent=file.name;
   var reader=new FileReader();
-  reader.onload=function(e){ processITN(e.target.result, file.name, true); };
+  reader.onload=function(e){
+    var dEl=document.getElementById('date-itn');
+    var forced=(dEl&&dEl.value)?dEl.value:null;
+    processITN(e.target.result, file.name, true, forced);
+  };
   reader.readAsArrayBuffer(file);
 }
 
@@ -459,7 +489,7 @@ function loadITN(file){
 // fromUser=true cuando lo sube la persona aquí mismo (y por lo tanto se
 // guarda para que otros módulos lo usen); fromUser=false cuando se está
 // auto-cargando un archivo que ya subieron en otro módulo.
-function processITN(buffer, filename, fromUser){
+function processITN(buffer, filename, fromUser, forceDate){
     try{
       var wb=XLSX.read(buffer,{type:'array',cellDates:true});
       var ws=wb.Sheets[wb.SheetNames[0]];
@@ -521,23 +551,21 @@ function processITN(buffer, filename, fromUser){
         }
       });
 
-      // Detect date from first PO ship date or filename
+      // Fecha del snapshot: prioridad = fecha indicada manualmente (campo
+      // "Fecha de este ITN" o fecha elegida en Carga del día) > fecha en el
+      // nombre del archivo > fecha de hoy. Ya NO se adivina por la fecha de
+      // embarque más común de los PO, porque eso podía hacer que dos días
+      // distintos cayeran en la misma fecha (o en el orden equivocado) y
+      // dañaba el cálculo de "Nuevo" vs "Cambió".
       var iso=null;
-      // Try filename first: 03-06-2026 or 2026-06-03
-      var fn=filename;
-      var m1=fn.match(/(\d{2})-(\d{2})-(\d{4})/);
-      var m2=fn.match(/(\d{4})-(\d{2})-(\d{2})/);
-      if(m1) iso=m1[3]+'-'+m1[2]+'-'+m1[1];
-      else if(m2) iso=m2[1]+'-'+m2[2]+'-'+m2[3];
-      // Fallback: most common ship date in POs
+      if(forceDate && /^\d{4}-\d{2}-\d{2}$/.test(forceDate)) iso=forceDate;
       if(!iso){
-        var dateCounts={};
-        Object.values(poMap).forEach(function(p){
-          var s=toISO(p.ship);
-          if(s) dateCounts[s]=(dateCounts[s]||0)+1;
-        });
-        var best=Object.keys(dateCounts).sort(function(a,b){return dateCounts[b]-dateCounts[a];})[0];
-        if(best) iso=best;
+        // Try filename: 03-06-2026 or 2026-06-03
+        var fn=filename;
+        var m1=fn.match(/(\d{2})-(\d{2})-(\d{4})/);
+        var m2=fn.match(/(\d{4})-(\d{2})-(\d{2})/);
+        if(m1) iso=m1[3]+'-'+m1[2]+'-'+m1[1];
+        else if(m2) iso=m2[1]+'-'+m2[2]+'-'+m2[3];
       }
       if(!iso) iso=todayISO();
 
@@ -827,7 +855,7 @@ function buildTable(){
   th1+='<th id="th-div" rowspan="2" class="tl sortable" style="vertical-align:bottom" ondblclick="sortBy(&quot;div&quot;)">Origen / División</th>';
   th1+='<th id="th-ship" rowspan="2" class="tl sortable" style="vertical-align:bottom" ondblclick="sortBy(&quot;ship&quot;)">Ship Date</th>';
   th1+='<th id="th-carrier" rowspan="2" class="tl sortable" style="vertical-align:bottom" ondblclick="sortBy(&quot;carrier&quot;)">Carrier</th>';
-  HIST_DATA.forEach(function(d,i){ th1+='<th id="th-qty'+i+'" class="sortable" style="text-align:center;background:#e6f1fb;color:#185fa5" ondblclick="sortBy(&quot;qty'+i+'&quot;)">'+d.label+'</th>'; });
+  HIST_DATA.forEach(function(d,i){ th1+='<th id="th-qty'+i+'" class="sortable" style="text-align:center;background:var(--pale);color:var(--blue)" ondblclick="sortBy(&quot;qty'+i+'&quot;)">'+d.label+'</th>'; });
   th1+='<th id="th-status" rowspan="2" class="sortable" style="min-width:80px;vertical-align:bottom" ondblclick="sortBy(&quot;status&quot;)">Estado</th>';
   th1+='<th rowspan="2" style="width:40px"></th></tr>';
   var th2='<tr><th class="day-hdr" style="font-size:9px;color:var(--muted)" colspan="5">doble clic en columna = ordenar</th>';
