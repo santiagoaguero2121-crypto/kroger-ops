@@ -51,13 +51,15 @@
     try {
       var b64 = arrayBufferToBase64(arrayBuffer);
       localStorage.setItem(PREFIX + type, b64);
-      localStorage.setItem(
-        PREFIX + type + META_SUFFIX,
-        JSON.stringify({
-          name: (fileMeta && fileMeta.name) || ('archivo_' + type),
-          savedAt: new Date().toISOString(),
-        })
-      );
+      var meta = {
+        name: (fileMeta && fileMeta.name) || ('archivo_' + type),
+        savedAt: new Date().toISOString(),
+      };
+      // Fecha explícita (YYYY-MM-DD) que representa el archivo, si se indicó.
+      // Se usa para que los módulos que llevan historial por día (p.ej.
+      // Seguimiento ITN) no tengan que "adivinar" la fecha del archivo.
+      if (fileMeta && fileMeta.date) meta.date = fileMeta.date;
+      localStorage.setItem(PREFIX + type + META_SUFFIX, JSON.stringify(meta));
       return true;
     } catch (e) {
       console.warn('DKShared: no se pudo guardar el archivo compartido "' + type + '"', e);
@@ -75,6 +77,7 @@
       return {
         name: meta.name,
         savedAt: meta.savedAt,
+        date: meta.date || null,
         arrayBuffer: base64ToArrayBuffer(b64),
       };
     } catch (e) {
