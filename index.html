@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Distribución Kroger — Floral Ops</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<script src="shared-store.js?v=4"></script>
+<script src="shared-store.js?v=6"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -290,7 +290,6 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
     <div class="day-upload-panel">
       <div class="day-upload-row">
         <span class="day-upload-label"><i class="ti ti-cloud-upload" style="font-size:13px" aria-hidden="true"></i> Carga del día</span>
-        <input type="date" id="d-date" title="Fecha que representa el ITN que vas a subir" style="padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:11px;background:var(--white);color:var(--text)">
         <input type="file" id="inp-day-itn" accept=".xls,.xlsx" style="display:none" onchange="if(this.files&&this.files[0])loadDayFile('itn',this.files[0]);this.value=''">
         <label for="inp-day-itn" class="d-chip" id="d-box-itn"
           ondragover="event.preventDefault();this.classList.add('dragging')"
@@ -382,16 +381,16 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
   </div>
 
   <!-- COMPARADOR -->
-  <iframe id="mod-comp" class="iframe-frame" src="kroger_comparador.html?v=4" style="display:none"></iframe>
+  <iframe id="mod-comp" class="iframe-frame" src="kroger_comparador.html?v=6" style="display:none"></iframe>
 
   <!-- SEGUIMIENTO -->
-  <iframe id="mod-seg" class="iframe-frame" src="itn_seguimiento.html?v=4" style="display:none"></iframe>
+  <iframe id="mod-seg" class="iframe-frame" src="itn_seguimiento.html?v=6" style="display:none"></iframe>
 
   <!-- ANÁLISIS WO -->
-  <iframe id="mod-wo" class="iframe-frame" src="kroger_wo_analisis.html?v=4" style="display:none"></iframe>
+  <iframe id="mod-wo" class="iframe-frame" src="kroger_wo_analisis.html?v=6" style="display:none"></iframe>
 
   <!-- LOGÍSTICA -->
-  <iframe id="mod-log" class="iframe-frame" src="logistica.html?v=4" style="display:none"></iframe>
+  <iframe id="mod-log" class="iframe-frame" src="logistica.html?v=6" style="display:none"></iframe>
 
   <!-- MI CUENTA -->
   <div id="mod-cuenta" style="display:none"><div class="mod-wrap">
@@ -525,22 +524,32 @@ setInterval(updateClock,30000);
 // compartido para que Comparador y Seguimiento ITN lo reciban al
 // instante (sin necesidad de subirlo también ahí).
 // ---------------------------------------------------------------
+// La fecha de cada ITN se lee directamente del NOMBRE del archivo
+// (03-06-2026 o 2026-06-03) — no hay campo de fecha manual que se pueda
+// quedar desactualizado.
+function guessDateFromFilename(name){
+  var m1=name.match(/(\d{2})-(\d{2})-(\d{4})/);
+  var m2=name.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if(m1) return m1[3]+'-'+m1[2]+'-'+m1[1];
+  if(m2) return m2[1]+'-'+m2[2]+'-'+m2[3];
+  return null;
+}
+
 function loadDayFile(type, file){
   var fnEl = document.getElementById('d-fn-'+type);
   var boxEl = document.getElementById('d-box-'+type);
   var status = document.getElementById('d-status');
-  var dateEl = document.getElementById('d-date');
   fnEl.textContent = 'Leyendo '+file.name+'...';
   var reader = new FileReader();
   reader.onload = function(e){
     try{
       if(!window.DKShared) throw new Error('shared-store.js no está cargado');
-      var meta = {name:file.name};
-      if(dateEl && dateEl.value) meta.date = dateEl.value;
-      DKShared.save(type, meta, e.target.result);
+      DKShared.save(type, {name:file.name}, e.target.result);
       fnEl.textContent = file.name;
       boxEl.classList.add('loaded');
-      status.textContent = '✓ '+(type==='itn'?'ITN':'WO')+' guardado — ya se está compartiendo con Comparador y Seguimiento ITN.';
+      var guess = type==='itn' ? guessDateFromFilename(file.name) : null;
+      var fechaTxt = guess ? ' Fecha detectada: '+guess+'.' : '';
+      status.textContent = '✓ '+(type==='itn'?'ITN':'WO')+' guardado — ya se está compartiendo con Comparador y Seguimiento ITN.'+fechaTxt;
     }catch(err){
       status.textContent = 'Error al guardar: '+err.message;
     }
@@ -736,14 +745,6 @@ function addUser(){
 }
 
 document.addEventListener('DOMContentLoaded',function(){
-  try{
-    var dEl=document.getElementById('d-date');
-    if(dEl && !dEl.value){
-      var t=new Date();
-      var iso=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
-      dEl.value=iso;
-    }
-  }catch(e){}
   refreshDayStatus();
   if(window.DKShared){
     DKShared.onChange('itn', refreshDayStatus);
