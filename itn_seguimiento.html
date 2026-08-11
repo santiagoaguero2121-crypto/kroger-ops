@@ -435,6 +435,13 @@ function autoLoadShared(){
     var sWo=DKShared.get('wo');
     if(sWo) processWO(sWo.arrayBuffer, sWo.name, false);
   }catch(e){ console.warn('autoLoadShared error', e); }
+  // Además, queda escuchando en vivo: si suben un ITN o un WO nuevo en
+  // otro módulo mientras esta página sigue abierta (sin recargar), se
+  // actualiza sola al instante.
+  try{
+    DKShared.onChange('itn', function(s){ processITN(s.arrayBuffer, s.name, false); });
+    DKShared.onChange('wo',  function(s){ processWO(s.arrayBuffer, s.name, false); });
+  }catch(e){ console.warn('onChange error', e); }
 }
 
 function save(){ try{ localStorage.setItem(HIST_KEY,JSON.stringify(HIST_DATA)); }catch(e){} }
