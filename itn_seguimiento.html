@@ -474,12 +474,10 @@ function loadITN(file){
         var houstonDiv=houstonDivFromPO(po);
         var whDiv=houstonDiv||divFromRWH(rwh);
         var region=houstonDiv?'Houston':regionFromWhDiv(whDiv);
-        // West tiene varias bodegas destino (Frys, Compton, Riverside, Kendall...) -> esas se
-        // conservan como división, y Calexico/Vista queda aparte en "origin".
-        // NFC solo tenía una bodega destino (NFC), así que ahí SÍ reemplazamos la división
-        // directamente por Miami/Xenia (no se pierde nada, y así se diferencian en el filtro principal).
-        var div = region==='NFC' ? originFor(region,swh) : whDiv;
-        var origin = region==='West' ? originFor(region,swh) : '';
+        // División siempre es la bodega destino (Frys, Compton, Riverside, Kendall, NFC, etc.).
+        // Origen (Calexico/Vista en West, Miami/Xenia en NFC) va aparte, en su propio campo/tag.
+        var div = whDiv;
+        var origin = originFor(region,swh);
         if(!poMap[po]) poMap[po]={qty:0,amt:0,div:div,region:region,origin:origin,carrier:carrier,ship:ship,prods:{}};
         poMap[po].qty+=qty; poMap[po].amt+=amt;
         if(!poMap[po].div&&div) poMap[po].div=div;
@@ -764,7 +762,7 @@ function buildTable(){
   // Division summary - critical POs by division
   var divCrit={};
   rows.filter(function(r){return r.status==='crit';}).forEach(function(r){
-    var d=r.div||'Sin div'; divCrit[d]=(divCrit[d]||0)+1;
+    var d=r.origin||r.div||'Sin div'; divCrit[d]=(divCrit[d]||0)+1;
   });
   var divSumEl=document.getElementById('div-summary');
   if(divSumEl){
@@ -838,6 +836,9 @@ function applyF(){
   var fromF=(document.getElementById('f-from')||{value:''}).value||'';
   var toF=(document.getElementById('f-to')||{value:''}).value||'';
   FILTERED=_allRows.filter(function(r){
+    // Los entregados quedan ocultos de la vista principal para no saturarla —
+    // solo se ven si se hace clic en la tarjeta "Entregados" (STAT_FILTER==='done').
+    if(r.status==='done'&&STAT_FILTER!=='done') return false;
     if(fromF&&r.ship&&toISO(r.ship)<fromF) return false;
     if(toF&&r.ship&&toISO(r.ship)>toF) return false;
     if(STAT_FILTER==='nota'&&getNoteSummary(r.po).active===0) return false;
