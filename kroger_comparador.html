@@ -353,6 +353,11 @@ var FILES = {itn:null, wo:null, fac:null};
     var s=DKShared.get(src);
     if(s) processFile(src, s.arrayBuffer, s.name, false);
   });
+  // Queda escuchando en vivo: si suben un archivo nuevo en otro módulo
+  // mientras esta página sigue abierta (sin recargar), se actualiza sola.
+  ['itn','wo','fac'].forEach(function(src){
+    DKShared.onChange(src, function(s){ processFile(src, s.arrayBuffer, s.name, false); });
+  });
 })();
 var DATA = [], FILTERED = [], EXPANDED = {};
 var SORT_COL = '', SORT_DIR = 1;
