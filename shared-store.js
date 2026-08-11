@@ -92,10 +92,22 @@
     localStorage.removeItem(PREFIX + type + META_SUFFIX);
   }
 
+  // Avisa en tiempo real cuando otro módulo (otra pestaña, otro iframe,
+  // u otra ventana del mismo sitio) guarda un archivo nuevo de este tipo.
+  // No requiere recargar la página. callback(s) recibe lo mismo que get().
+  function onSharedChange(type, callback) {
+    window.addEventListener('storage', function (e) {
+      if (e.key !== PREFIX + type) return;
+      var s = getSharedFile(type);
+      if (s) callback(s);
+    });
+  }
+
   window.DKShared = {
     save: saveSharedFile,
     get: getSharedFile,
     has: hasSharedFile,
     clear: clearSharedFile,
+    onChange: onSharedChange,
   };
 })(window);
