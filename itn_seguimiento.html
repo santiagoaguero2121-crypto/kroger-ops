@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Seguimiento Diario ITN</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="shared-store.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -421,7 +422,20 @@ var SELECTED={};
   try{ var r=localStorage.getItem(HIST_KEY); if(r) HIST_DATA=JSON.parse(r); }catch(e){}
   if(!Array.isArray(HIST_DATA)) HIST_DATA=[];
   if(HIST_DATA.length>0) buildUI();
+  autoLoadShared();
 })();
+
+// Revisa si otro módulo (p.ej. el Comparador Kroger) ya subió un ITN o un WO
+// y los carga automáticamente aquí, sin necesidad de volver a subirlos.
+function autoLoadShared(){
+  if(!window.DKShared) return;
+  try{
+    var sItn=DKShared.get('itn');
+    if(sItn) processITN(sItn.arrayBuffer, sItn.name, false);
+    var sWo=DKShared.get('wo');
+    if(sWo) processWO(sWo.arrayBuffer, sWo.name, false);
+  }catch(e){ console.warn('autoLoadShared error', e); }
+}
 
 function save(){ try{ localStorage.setItem(HIST_KEY,JSON.stringify(HIST_DATA)); }catch(e){} }
 function sbar(m){ document.getElementById('sbar').textContent=m; }
@@ -430,9 +444,17 @@ function loadITN(file){
   sbar('Leyendo '+file.name+'...');
   document.getElementById('fn-itn').textContent=file.name;
   var reader=new FileReader();
-  reader.onload=function(e){
+  reader.onload=function(e){ processITN(e.target.result, file.name, true); };
+  reader.readAsArrayBuffer(file);
+}
+
+// buffer: ArrayBuffer del archivo · filename: nombre a mostrar
+// fromUser=true cuando lo sube la persona aquí mismo (y por lo tanto se
+// guarda para que otros módulos lo usen); fromUser=false cuando se está
+// auto-cargando un archivo que ya subieron en otro módulo.
+function processITN(buffer, filename, fromUser){
     try{
-      var wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+      var wb=XLSX.read(buffer,{type:'array',cellDates:true});
       var ws=wb.Sheets[wb.SheetNames[0]];
       var rows=null;
       // Try header rows 0-6 until we find PO column
@@ -495,7 +517,7 @@ function loadITN(file){
       // Detect date from first PO ship date or filename
       var iso=null;
       // Try filename first: 03-06-2026 or 2026-06-03
-      var fn=file.name;
+      var fn=filename;
       var m1=fn.match(/(\d{2})-(\d{2})-(\d{4})/);
       var m2=fn.match(/(\d{4})-(\d{2})-(\d{2})/);
       if(m1) iso=m1[3]+'-'+m1[2]+'-'+m1[1];
@@ -524,19 +546,23 @@ function loadITN(file){
       }
       save();
       document.getElementById('box-itn').classList.add('loaded');
+      document.getElementById('fn-itn').textContent = filename + (fromUser ? '' : ' (compartido desde otro modulo)');
+      if(window.DKShared && fromUser) DKShared.save('itn', {name:filename}, buffer);
       buildUI();
     }catch(err){ sbar('Error: '+err.message); }
-  };
-  reader.readAsArrayBuffer(file);
 }
 
 function loadWO(file){
   sbar('Leyendo WO: '+file.name+'...');
   document.getElementById('fn-wo').textContent=file.name;
   var reader=new FileReader();
-  reader.onload=function(e){
+  reader.onload=function(e){ processWO(e.target.result, file.name, true); };
+  reader.readAsArrayBuffer(file);
+}
+
+function processWO(buffer, filename, fromUser){
     try{
-      var wb=XLSX.read(e.target.result,{type:'array'});
+      var wb=XLSX.read(buffer,{type:'array'});
       var ws=wb.Sheets[wb.SheetNames[0]];
       var rows=XLSX.utils.sheet_to_json(ws,{defval:''});
       if(!rows.length){ sbar('WO vacío.'); return; }
@@ -548,11 +574,11 @@ function loadWO(file){
         if(po&&isKroger(po)) WO_POS[po]=true;
       });
       document.getElementById('box-wo').classList.add('loaded');
+      document.getElementById('fn-wo').textContent = filename + (fromUser ? '' : ' (compartido desde otro modulo)');
       sbar('✓ WO cargado — '+Object.keys(WO_POS).length+' POs con WO');
+      if(window.DKShared && fromUser) DKShared.save('wo', {name:filename}, buffer);
       if(_allRows.length){ applyF(); buildNotesAlert(); }
     }catch(err){ sbar('Error WO: '+err.message); }
-  };
-  reader.readAsArrayBuffer(file);
 }
 
 function clearHistory(){
