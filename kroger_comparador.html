@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Kroger — Comparador</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="shared-store.js?v=6"></script>
+<script src="shared-store.js?v=9"></script>
 <script>
 // Aplica el tema (claro/oscuro) lo antes posible, para que no haya parpadeo,
 // y se mantiene sincronizado en vivo con el cambio hecho desde el Inicio.
@@ -239,20 +239,36 @@ tr.row-canceled td{border-left:3px solid #bbb;opacity:.7}
   <div class="filters">
     <label>Estado:</label>
     <select id="f-st" onchange="applyF()"></select>
-    <label>Región:</label>
-    <select id="f-reg" onchange="onRegionChange()">
-      <option value="">Todas</option>
-      <option value="west">🌊 West</option>
-      <option value="east">🌄 East</option>
-      <option value="xenia">⭐ Xenia</option>
-    </select>
-    <label>División:</label>
-    <select id="f-div" onchange="applyF()"></select>
+    <label>Ship Date:</label>
+    <div style="position:relative;display:inline-block" id="ship-dd-wrap">
+      <button id="ship-dd-btn" onclick="toggleShipDD()" style="font-size:11px;padding:4px 10px;border:0.5px solid var(--border);border-radius:6px;background:var(--white);color:var(--text);height:28px;cursor:pointer;font-family:inherit;min-width:150px;display:flex;align-items:center;justify-content:space-between;gap:6px">
+        <span id="ship-dd-label">Todas las fechas</span><span style="font-size:9px;color:var(--muted)" id="ship-dd-arrow">▼</span>
+      </button>
+      <div id="ship-dd-menu" style="display:none;position:absolute;top:32px;left:0;background:var(--white);border:0.5px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:999;min-width:210px;padding:4px 0">
+        <div id="ship-dd-items"></div>
+        <div style="border-top:0.5px solid var(--border);padding:5px 10px;display:flex;justify-content:space-between;align-items:center">
+          <button onclick="clearShipDates()" style="font-size:10px;background:none;border:none;color:var(--muted);cursor:pointer;font-family:inherit">Limpiar</button>
+          <span style="font-size:10px;color:var(--muted)" id="ship-dd-count">0 fechas</span>
+        </div>
+      </div>
+    </div>
     <label>Desde:</label>
     <input type="date" id="f-from" onchange="applyF()" style="font-size:11px;padding:3px 7px;border:0.5px solid var(--border);border-radius:6px;background:var(--white);color:var(--text);height:28px;font-family:inherit">
     <label>Hasta:</label>
     <input type="date" id="f-to" onchange="applyF()" style="font-size:11px;padding:3px 7px;border:0.5px solid var(--border);border-radius:6px;background:var(--white);color:var(--text);height:28px;font-family:inherit">
     <button id="btn-hoy" class="bclear" onclick="toggleToday()" style="color:var(--blue);font-weight:700;border-color:var(--blue)">📅 Ver hoy</button>
+    <label>Región:</label>
+    <select id="f-reg" onchange="onRegionChange()">
+      <option value="">Todas</option>
+      <option value="west">🌊 West</option>
+      <option value="houston">🤠 Houston</option>
+      <option value="east">🌄 East</option>
+      <option value="xenia">⭐ Xenia</option>
+    </select>
+    <label>Origen:</label>
+    <select id="f-origin" onchange="applyF()"></select>
+    <label>División:</label>
+    <select id="f-div" onchange="applyF()"></select>
     <label>PO:</label>
     <input type="text" id="f-po" placeholder="Buscar PO..." oninput="applyF()">
     <button class="bclear" onclick="clearF()">Limpiar</button>
@@ -344,6 +360,53 @@ var RWH_DIV = {
   'Kroger NFC Whs':'NFC','Kroger Smiths':'Smiths',
   'Kroger East Houston Whs':'Houston'
 };
+
+// --- Mismo cálculo de "Origen" (Calexico/Vista/Miami/Xenia) que usa
+// Seguimiento ITN, para poder filtrar por origen aquí también. Es un dato
+// ADICIONAL a la división (RWH_DIV arriba) — no la reemplaza.
+var NFC_DIVS = ['Xenia','NFC'];
+var HOUSTON_DIVS = ['Dillons','Houston','Champ Floral'];
+var SWH_SUBDIV = {
+  'calexico pg3':'Calexico','passion west':'Vista','ks carlsbad':'Vista',
+  'passion':'Miami','xenia pg':'Xenia'
+};
+var ORIGIN_META = {
+  'Calexico':{emoji:'🌵',bg:'#FFF1DC',fg:'#8a4b00',dot:'#E8890C'},
+  'Vista':{emoji:'🌲',bg:'#E4F5E9',fg:'#1a6b3a',dot:'#2F9E5B'},
+  'Miami':{emoji:'🌴',bg:'#E3F6FA',fg:'#0e6e82',dot:'#17A2B8'},
+  'Xenia':{emoji:'⭐',bg:'#F1E7FB',fg:'#6a3d9a',dot:'#8E5FC9'}
+};
+function originBadge(origin){
+  if(!origin) return '';
+  var m=ORIGIN_META[origin]||{emoji:'',bg:'var(--pale)',fg:'var(--muted)',dot:'var(--muted)'};
+  return '<span class="dtag" style="background:'+m.bg+';color:'+m.fg+';display:inline-flex;align-items:center;gap:4px">'
+    +'<span style="width:6px;height:6px;border-radius:50%;background:'+m.dot+';display:inline-block;flex:none"></span>'
+    +(m.emoji?m.emoji+' ':'')+origin+'</span>';
+}
+function originOptionLabel(origin){
+  var m=ORIGIN_META[origin];
+  return (m&&m.emoji?m.emoji+' ':'')+origin;
+}
+function divFromRWH(rwh){
+  if(!rwh) return '';
+  var r=rwh.trim().replace(/\xa0/g,'').replace(/^'+|'+$/g,'').trim();
+  if(RWH_DIV[r]) return RWH_DIV[r];
+  for(var k in RWH_DIV){ if(r.toLowerCase().indexOf(k.toLowerCase())>=0) return RWH_DIV[k]; }
+  return r;
+}
+function regionFromWhDiv(whDiv){
+  if(!whDiv) return '';
+  if(NFC_DIVS.indexOf(whDiv)>=0) return 'NFC';
+  if(WEST_DIVS.indexOf(whDiv)>=0) return 'West';
+  if(HOUSTON_DIVS.indexOf(whDiv)>=0) return 'Houston';
+  return 'East';
+}
+function originFor(region, swh){
+  if(region!=='West'&&region!=='NFC') return '';
+  var s=String(swh||'').replace(/\xa0/g,'').trim().toLowerCase();
+  if(SWH_SUBDIV[s]) return SWH_SUBDIV[s];
+  return region==='NFC' ? 'Miami' : 'Vista';
+}
 
 function divFromPO(po){
   for(var i=0;i<PREFIXES.length;i++){
@@ -454,9 +517,18 @@ function fc(obj,pat){ return Object.keys(obj).find(function(c){ return pat.test(
 
 function parseFile(src, rows){
   if(src==='itn'){
+    var colSWH = fc(rows[0]||{},/^SW.H$/i)||fc(rows[0]||{},/^SW\/H$/i)||fc(rows[0]||{},/SOURCE/i);
     return rows.map(function(r){
+      var po=String(r[fc(r,/^PO$/i)]||'').trim();
       var rwh = String(r[fc(r,/^RWH$/i)]||'').trim();
-      return { po:String(r[fc(r,/^PO$/i)]||'').trim(),
+      var swh = String(r[colSWH]||'').trim();
+      // Origen (Calexico/Vista/Miami/Xenia) — mismo cálculo que Seguimiento ITN,
+      // pero usando la división tal como ya la reconoce el Comparador (RWH_DIV),
+      // en vez del prefijo de PO (ese esquema es distinto entre los dos módulos).
+      var whDiv=RWH_DIV[rwh]||divFromRWH(rwh);
+      var region=regionFromWhDiv(whDiv);
+      var origin=originFor(region,swh);
+      return { po:po,
                qty:num(r[fc(r,/^S QTY$/i)]), amt:num(r[fc(r,/^S COST$/i)]),
                date:pd(r[fc(r,/SHIP DATE/i)]),
                desc:String(r[fc(r,/^DESC$/i)]||''),
@@ -464,7 +536,7 @@ function parseFile(src, rows){
                status:String(r[fc(r,/^STATUS$/i)]||'').trim().toUpperCase(),
                carrier:String(r[fc(r,/^CARRIER$/i)]||'').trim(),
                unit_price:num(r[fc(r,/^B PRICE$/i)]||r[fc(r,/^B_PRICE$/i)]||r[fc(r,/BPRICE/i)]||0),
-               div:RWH_DIV[rwh]||'' };
+               div:RWH_DIV[rwh]||'', origin:origin };
     }).filter(function(r){ return isKroger(r.po); });
   }
   if(src==='wo'){
@@ -506,7 +578,7 @@ function build(){
   var itn=FILES.itn||[], wo=FILES.wo||[], fac=FILES.fac||[];
   var itnM={};
   itn.forEach(function(r){
-    if(!itnM[r.po]) itnM[r.po]={qty:0,amt:0,date:'',prods:{},carriers:[],div:'',canceled:false};
+    if(!itnM[r.po]) itnM[r.po]={qty:0,amt:0,date:'',prods:{},carriers:[],div:'',origin:'',canceled:false};
     itnM[r.po].qty+=r.qty; itnM[r.po].amt+=r.amt;
     if(!itnM[r.po].date) itnM[r.po].date=r.date;
     if(r.status==='CANCELED'||r.status==='CANCELLED') itnM[r.po].canceled=true;
@@ -518,6 +590,7 @@ function build(){
     }
     if(r.carrier && itnM[r.po].carriers.indexOf(r.carrier)<0) itnM[r.po].carriers.push(r.carrier);
     if(r.div && !itnM[r.po].div) itnM[r.po].div=r.div;
+    if(r.origin && !itnM[r.po].origin) itnM[r.po].origin=r.origin;
   });
   var woM={};
   wo.forEach(function(r){
@@ -627,7 +700,7 @@ function build(){
     }
 
     records.push({
-      cust_po:cpo, div:(ww&&ww.div)?ww.div:(wi.div||divFromPO(cpo)),
+      cust_po:cpo, div:(ww&&ww.div)?ww.div:(wi.div||divFromPO(cpo)), origin:wi.origin||'',
       itn_qty:wi.qty, itn_amt:wi.amt, itn_date:iDate,
       itn_prods:itnProds, itn_carrier:iCarrier,
       wo_qty:ww?ww.qty:0, wo_amt:ww?ww.amt:0, wo_date:wDate,
@@ -662,6 +735,24 @@ function build(){
   divs.sort();
   ds.innerHTML='<option value="">Todas</option>';
   divs.forEach(function(d){ ds.innerHTML+='<option value="'+d+'">'+d+'</option>'; });
+
+  // Origin filter (Calexico/Vista/Miami/Xenia)
+  var os=document.getElementById('f-origin');
+  if(os){
+    var prevO=os.value;
+    var origins=[];
+    DATA.forEach(function(r){ if(r.origin&&origins.indexOf(r.origin)<0) origins.push(r.origin); });
+    origins.sort();
+    os.innerHTML='<option value="">Todos</option>';
+    origins.forEach(function(o){ os.innerHTML+='<option value="'+o+'">'+originOptionLabel(o)+'</option>'; });
+    if(prevO&&os.querySelector('option[value="'+prevO+'"]')) os.value=prevO;
+  }
+
+  // Ship date multi-select
+  var shipDates={};
+  DATA.forEach(function(r){ if(r.itn_date) shipDates[r.itn_date]=true; });
+  var sortedDates=Object.keys(shipDates).sort(function(a,b){ return toISO(a)<toISO(b)?-1:1; });
+  buildShipDD(sortedDates);
 
   buildStatusSelect();
   buildDivSummary();
@@ -736,6 +827,7 @@ function buildDivSummary(){
 function divRegion(div){
   if(XENIA_DIVS.indexOf(div)>=0) return 'xenia';
   if(WEST_DIVS.indexOf(div)>=0) return 'west';
+  if(HOUSTON_DIVS.indexOf(div)>=0) return 'houston';
   return 'east';
 }
 
@@ -762,12 +854,14 @@ function applyF(){
   if(!fs&&STAT_FILTER) fs=STAT_FILTER;
   var freg=document.getElementById('f-reg').value;
   var fd=document.getElementById('f-div').value;
+  var fo=(document.getElementById('f-origin')||{value:''}).value||'';
   var ff=document.getElementById('f-from').value;
   var ft=document.getElementById('f-to').value;
   var fp=document.getElementById('f-po').value.toLowerCase();
   FILTERED=DATA.filter(function(r){
     if(freg && divRegion(r.div||'')!==freg) return false;
     if(fd&&r.div!==fd) return false;
+    if(fo&&r.origin!==fo) return false;
     if(fp&&r.cust_po.toLowerCase().indexOf(fp)<0) return false;
     if(fs==='canceled'&&!r.canceled) return false;
     if(fs==='ok'&&!r.flags.includes('ok')) return false;
@@ -777,6 +871,7 @@ function applyF(){
     if(fs==='diff'&&!r.qDW&&!r.qDF) return false;
     if(fs==='carrier'&&!r.carrierDiff) return false;
     if(fs==='date_diff'&&!r.dateDiff) return false;
+    if(SHIP_SELECTED.size>0&&!SHIP_SELECTED.has(r.itn_date)) return false;
     if(ff||ft){
       var iso=toISO(r.itn_date); if(!iso) return false;
       if(ff&&iso<ff) return false;
@@ -793,10 +888,12 @@ function applyF(){
 function clearF(){
   STAT_FILTER='';
   HOY_ACTIVE=false;
+  SHIP_SELECTED.clear();
+  buildShipDD(shipDatesInItems());
   var bh=document.getElementById('btn-hoy');
   if(bh){bh.style.background='var(--light)';bh.style.color='var(--blue)';}
   document.querySelectorAll('.stats .stat').forEach(function(el){el.classList.remove('stat-active');el.style.opacity='1';});
-  ['f-st','f-div','f-reg'].forEach(function(id){document.getElementById(id).value='';});
+  ['f-st','f-div','f-reg','f-origin'].forEach(function(id){var el=document.getElementById(id); if(el) el.value='';});
   ['f-from','f-to','f-po'].forEach(function(id){document.getElementById(id).value='';});
   // repopulate division with all options
   var ds=document.getElementById('f-div');
@@ -804,6 +901,14 @@ function clearF(){
   var divs=[];
   DATA.forEach(function(r){ if(r.div&&divs.indexOf(r.div)<0) divs.push(r.div); });
   divs.sort().forEach(function(d){ ds.innerHTML+='<option value="'+d+'">'+d+'</option>'; });
+  // repopulate origin with all options
+  var os=document.getElementById('f-origin');
+  if(os){
+    os.innerHTML='<option value="">Todos</option>';
+    var origins=[];
+    DATA.forEach(function(r){ if(r.origin&&origins.indexOf(r.origin)<0) origins.push(r.origin); });
+    origins.sort().forEach(function(o){ os.innerHTML+='<option value="'+o+'">'+originOptionLabel(o)+'</option>'; });
+  }
   applyF();
 }
 
@@ -849,6 +954,76 @@ function renderStats(){
 }
 var STAT_FILTER='';
 var HOY_ACTIVE=false;
+var SHIP_SELECTED=new Set();
+var SHIP_DD_OPEN=false;
+
+function toggleShipDD(){
+  SHIP_DD_OPEN=!SHIP_DD_OPEN;
+  var menu=document.getElementById('ship-dd-menu');
+  var arrow=document.getElementById('ship-dd-arrow');
+  if(menu) menu.style.display=SHIP_DD_OPEN?'block':'none';
+  if(arrow) arrow.textContent=SHIP_DD_OPEN?'▲':'▼';
+}
+function buildShipDD(dates){
+  var items=document.getElementById('ship-dd-items');
+  if(!items) return;
+  var today=todayISO();
+  var tomorrow=new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+  var tomorrowISO=tomorrow.getFullYear()+'-'+String(tomorrow.getMonth()+1).padStart(2,'0')+'-'+String(tomorrow.getDate()).padStart(2,'0');
+  var html='';
+  dates.forEach(function(d){
+    var iso=toISO(d);
+    var tag='';
+    if(iso===today) tag='<span style="font-size:9px;background:#e2f5eb;color:#1a6b3a;padding:1px 6px;border-radius:10px;margin-left:auto;font-weight:500">Hoy</span>';
+    else if(iso===tomorrowISO) tag='<span style="font-size:9px;background:#fff8e1;color:#7a5500;padding:1px 6px;border-radius:10px;margin-left:auto;font-weight:500">Mañana</span>';
+    var chk=SHIP_SELECTED.has(d)?'checked':'';
+    html+='<div style="display:flex;align-items:center;gap:8px;padding:5px 10px;cursor:pointer;font-size:11px;color:var(--text)" onclick="toggleShipDate(&quot;'+d+'&quot;)">'
+      +'<input type="checkbox" '+chk+' style="accent-color:#1a5fa8;width:13px;height:13px;pointer-events:none">'
+      +'<span>'+d+'</span>'+tag+'</div>';
+  });
+  items.innerHTML=html;
+  updateShipLabel();
+}
+function shipDatesInItems(){
+  var allDates=[];
+  document.querySelectorAll('#ship-dd-items div').forEach(function(el){
+    var span=el.querySelectorAll('span')[0];
+    if(span) allDates.push(span.textContent.trim());
+  });
+  return allDates;
+}
+function toggleShipDate(d){
+  if(SHIP_SELECTED.has(d)) SHIP_SELECTED.delete(d);
+  else SHIP_SELECTED.add(d);
+  buildShipDD(shipDatesInItems());
+  applyF();
+}
+function clearShipDates(){
+  SHIP_SELECTED.clear();
+  buildShipDD(shipDatesInItems());
+  applyF();
+}
+function updateShipLabel(){
+  var btn=document.getElementById('ship-dd-btn');
+  var lbl=document.getElementById('ship-dd-label');
+  var cnt=document.getElementById('ship-dd-count');
+  var n=SHIP_SELECTED.size;
+  if(cnt) cnt.textContent=n+' fecha'+(n!==1?'s':'');
+  if(!lbl) return;
+  if(n===0){ lbl.textContent='Todas las fechas'; if(btn){btn.style.background='';btn.style.color='';btn.style.borderColor='';} }
+  else if(n<=2){ lbl.textContent=Array.from(SHIP_SELECTED).sort().join(' · ').replace(/\/\d{4}/g,''); if(btn){btn.style.background='#deeaf7';btn.style.color='#1a5fa8';btn.style.borderColor='#1a5fa8';} }
+  else { lbl.textContent=n+' fechas selec.'; if(btn){btn.style.background='#deeaf7';btn.style.color='#1a5fa8';btn.style.borderColor='#1a5fa8';} }
+}
+document.addEventListener('click', function(e){
+  var wrap=document.getElementById('ship-dd-wrap');
+  if(SHIP_DD_OPEN && wrap && !wrap.contains(e.target)){
+    SHIP_DD_OPEN=false;
+    var menu=document.getElementById('ship-dd-menu');
+    var arrow=document.getElementById('ship-dd-arrow');
+    if(menu) menu.style.display='none';
+    if(arrow) arrow.textContent='▼';
+  }
+});
 
 function toggleStatFilter(key){
   STAT_FILTER=STAT_FILTER===key?'':key;
@@ -944,7 +1119,7 @@ function renderTable(){
   var html='';
   for(var i=0;i<page.length;i++){
     var r=page[i], id='r'+(start+i), exp=!!EXPANDED[id];
-    var div=r.div?'<span class="dtag">'+r.div+'</span>':'—';
+    var div=(r.origin?originBadge(r.origin)+' ':'')+(r.div?'<span class="dtag">'+r.div+'</span>':(r.origin?'':'—'));
     var woa=r.hasWO?'<span class="amt">'+fA(r.wo_amt)+'</span>':'<span class="mb">—</span>';
     var fca=r.hasFAC?'<span class="amt">'+fA(r.fac_amt)+'</span>':'<span class="mb">—</span>';
     html+='<tr class="'+rowcls(r)+(exp?' exp-main':'')+'">'
@@ -1156,7 +1331,7 @@ function exportXLSX(){
     return (v.indexOf(',')>=0||v.indexOf('"')>=0||v.indexOf('\n')>=0)?'"'+v.replace(/"/g,'""')+'"':v;
   }
   function fmtAmt(v){ return v?parseFloat(v).toFixed(2):''; }
-  var cols=['PO','Division','Region','ITN Qty','ITN Monto','WO Qty','Dif. WO','WO Monto','FAC Qty','Dif. FAC','FAC Monto','Fecha ITN','Fecha WO','Fecha FAC','Estado'];
+  var cols=['PO','Division','Region','Origen','ITN Qty','ITN Monto','WO Qty','Dif. WO','WO Monto','FAC Qty','Dif. FAC','FAC Monto','Fecha ITN','Fecha WO','Fecha FAC','Estado'];
   var lines=[cols.join(',')];
   for(var i=0;i<FILTERED.length;i++){
     var r=FILTERED[i];
@@ -1166,11 +1341,12 @@ function exportXLSX(){
     if(r.div){
       if(XENIA_DIVS.indexOf(r.div)>=0) reg='XENIA';
       else if(WEST_DIVS.indexOf(r.div)>=0) reg='WEST';
+      else if(HOUSTON_DIVS.indexOf(r.div)>=0) reg='HOUSTON';
       else reg='EAST';
     }
     var estado=r.canceled?'Cancelado':(r.flags&&r.flags.length?r.flags.join(' | '):'ok');
     lines.push([
-      csvval(r.cust_po), csvval(r.div), csvval(reg),
+      csvval(r.cust_po), csvval(r.div), csvval(reg), csvval(r.origin||''),
       Math.round(r.itn_qty||0), fmtAmt(r.itn_amt),
       r.hasWO?Math.round(r.wo_qty||0):'', dw, fmtAmt(r.hasWO?r.wo_amt:''),
       r.hasFAC?Math.round(r.fac_qty||0):'', df, fmtAmt(r.hasFAC?r.fac_amt:''),
