@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Kroger — Comparador</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="shared-store.js?v=9"></script>
+<script src="shared-store.js?v=12"></script>
 <script>
 // Aplica el tema (claro/oscuro) lo antes posible, para que no haya parpadeo,
 // y se mantiene sincronizado en vivo con el cambio hecho desde el Inicio.
@@ -528,14 +528,27 @@ function parseFile(src, rows){
       var whDiv=RWH_DIV[rwh]||divFromRWH(rwh);
       var region=regionFromWhDiv(whDiv);
       var origin=originFor(region,swh);
+      // Precio unitario: SIEMPRE desde S PRICE (precio de venta por unidad).
+      // OJO: "S COST" es el TOTAL de la línea (S PRICE * S QTY), no el precio
+      // unitario — por eso se sigue usando para "amt" (monto total) más abajo.
+      // Antes se tomaba de "B PRICE" (precio de compra/broker), que en ~1 de
+      // cada 4 filas del ITN real NO coincide con S PRICE — de ahí el precio
+      // unitario incorrecto que reportaron. Si por algún motivo la columna
+      // "S PRICE" no viene en el archivo, se calcula S COST / S QTY como respaldo
+      // (da el mismo resultado, verificado contra datos reales).
+      var sQtyVal=num(r[fc(r,/^S QTY$/i)]);
+      var sCostVal=num(r[fc(r,/^S COST$/i)]);
+      var sPriceRaw=r[fc(r,/^S PRICE$/i)]||r[fc(r,/^S_PRICE$/i)]||r[fc(r,/SPRICE/i)];
+      var unitPrice=num(sPriceRaw);
+      if(!unitPrice && sQtyVal) unitPrice=sCostVal/sQtyVal;
       return { po:po,
-               qty:num(r[fc(r,/^S QTY$/i)]), amt:num(r[fc(r,/^S COST$/i)]),
+               qty:sQtyVal, amt:sCostVal,
                date:pd(r[fc(r,/SHIP DATE/i)]),
                desc:String(r[fc(r,/^DESC$/i)]||''),
                sku:String(r[fc(r,/^SKU$/i)]||'').trim(),
                status:String(r[fc(r,/^STATUS$/i)]||'').trim().toUpperCase(),
                carrier:String(r[fc(r,/^CARRIER$/i)]||'').trim(),
-               unit_price:num(r[fc(r,/^B PRICE$/i)]||r[fc(r,/^B_PRICE$/i)]||r[fc(r,/BPRICE/i)]||0),
+               unit_price:unitPrice,
                div:RWH_DIV[rwh]||'', origin:origin };
     }).filter(function(r){ return isKroger(r.po); });
   }
