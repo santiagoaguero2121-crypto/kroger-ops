@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Seguimiento Diario ITN</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="shared-store.js?v=6"></script>
+<script src="shared-store.js?v=9"></script>
 <script>
 // Aplica el tema (claro/oscuro) lo antes posible, para que no haya parpadeo,
 // y se mantiene sincronizado en vivo con el cambio hecho desde el Inicio.
@@ -280,6 +280,7 @@ tr.row-gone td{border-left:3px solid #bbb;opacity:.55}
     <span style="margin-left:auto;font-size:11px;color:var(--muted)" id="clbl"></span>
   </div>
 
+  <div style="font-size:10px;color:var(--muted);margin-bottom:4px">💡 Doble clic en el encabezado de una columna para ordenar por ella.</div>
   <div class="twrap">
     <div class="tscroll">
       <table>
@@ -848,9 +849,16 @@ function buildTable(){
   HIST_DATA.forEach(function(d,i){ th1+='<th id="th-qty'+i+'" class="sortable" style="text-align:center;background:var(--pale);color:var(--blue)" ondblclick="sortBy(&quot;qty'+i+'&quot;)">'+d.label+'</th>'; });
   th1+='<th id="th-status" rowspan="2" class="sortable" style="min-width:80px;vertical-align:bottom" ondblclick="sortBy(&quot;status&quot;)">Estado</th>';
   th1+='<th rowspan="2" style="width:40px"></th></tr>';
-  var th2='<tr><th class="day-hdr" style="font-size:9px;color:var(--muted)" colspan="5">doble clic en columna = ordenar</th>';
+  // OJO: las primeras 5 columnas (checkbox..carrier) y las últimas 2
+  // (Estado, flecha) ya son rowspan="2" desde th1 — esas celdas NO deben
+  // repetirse aquí, porque el navegador ya reserva su lugar en esta fila.
+  // Si se agregan celdas de más (como antes pasaba con la pista "doble
+  // clic..."), el navegador las empuja a columnas fantasma que no existen
+  // en el cuerpo de la tabla, y se ven vacías (más notorio en modo oscuro).
+  // Aquí solo van las 5 celdas "Qty", una por cada columna de día libre.
+  var th2='<tr>';
   HIST_DATA.forEach(function(){ th2+='<th class="day-hdr">Qty</th>'; });
-  th2+='<th class="day-hdr"></th><th class="day-hdr"></th></tr>';
+  th2+='</tr>';
   document.getElementById('thead').innerHTML=th1+th2;
 
   _allRows=rows;
