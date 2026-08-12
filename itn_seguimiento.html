@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Seguimiento Diario ITN</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="shared-store.js?v=9"></script>
+<script src="shared-store.js?v=10"></script>
 <script>
 // Aplica el tema (claro/oscuro) lo antes posible, para que no haya parpadeo,
 // y se mantiene sincronizado en vivo con el cambio hecho desde el Inicio.
@@ -603,7 +603,11 @@ function processWO(buffer, filename, fromUser){
       document.getElementById('fn-wo').textContent = filename + (fromUser ? '' : ' (compartido desde otro modulo)');
       sbar('✓ WO cargado — '+Object.keys(WO_POS).length+' POs con WO');
       if(window.DKShared && fromUser) DKShared.save('wo', {name:filename}, buffer);
-      if(_allRows.length){ applyF(); buildNotesAlert(); }
+      // Recalcula la tabla entera (no solo el filtro) para que la columna de
+      // PO muestre "✅ WO" / "❌ Sin WO" con los datos del WO recién cargado —
+      // antes solo se refrescaba el filtro y esas etiquetas quedaban con el
+      // valor de ANTES de subir el WO (o vacías si el WO se subió después).
+      if(HIST_DATA.length){ buildTable(); buildNotesAlert(); }
     }catch(err){ sbar('Error WO: '+err.message); }
 }
 
