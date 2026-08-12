@@ -6,7 +6,7 @@
 <title>Seguimiento Diario ITN</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-<script src="shared-store.js?v=11"></script>
+<script src="shared-store.js?v=13"></script>
 <script>
 // Aplica el tema (claro/oscuro) lo antes posible, para que no haya parpadeo,
 // y se mantiene sincronizado en vivo con el cambio hecho desde el Inicio.
@@ -721,9 +721,16 @@ function buildTable(){
     Object.keys(d.pos).forEach(function(po){
       if(!allPOs[po]) allPOs[po]={div:'',region:'',origin:'',carrier:'',ship:'',prods:{}};
       var p=d.pos[po];
-      if(!allPOs[po].div&&p.div) allPOs[po].div=p.div;
-      if(!allPOs[po].region&&p.region) allPOs[po].region=p.region;
-      if(!allPOs[po].origin&&p.origin) allPOs[po].origin=p.origin;
+      // División/región/origen: se toman del día MÁS RECIENTE que tenga el PO
+      // (HIST_DATA va de más viejo a más nuevo, así que sobreescribir sin
+      // condición logra eso). Antes se quedaba con el valor del PRIMER día
+      // visto y ya no se actualizaba — si ese primer día tenía una
+      // clasificación vieja o distinta (ej. origen mal calculado), quedaba
+      // "congelada" así para siempre aunque los ITN de días posteriores
+      // trajeran el dato correcto.
+      if(p.div) allPOs[po].div=p.div;
+      if(p.region) allPOs[po].region=p.region;
+      if(p.origin) allPOs[po].origin=p.origin;
       if(!allPOs[po].carrier&&p.carrier) allPOs[po].carrier=p.carrier;
       if(!allPOs[po].ship&&p.ship) allPOs[po].ship=p.ship;
       // Merge prods
